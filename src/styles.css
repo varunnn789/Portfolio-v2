@@ -127,15 +127,15 @@ body {
     position: fixed;
     top: 0;
     right: 0;
-    width: 420px;
+    width: 480px;
     height: 100%;
     background: rgba(10, 10, 20, 0.95);
     backdrop-filter: blur(10px);
     border-left: 1px solid rgba(0, 255, 255, 0.1);
-    padding: 5rem 2rem 2rem;
+    padding: 4.5rem 2.5rem 2rem;
     z-index: 50;
     overflow-y: auto;
-    transition: transform 0.3s ease, opacity 0.3s ease;
+    transition: transform 0.4s ease, opacity 0.3s ease;
 }
 
 #content.transitioning {
@@ -417,5 +417,35 @@ body {
     .nav-btn {
         padding: 0.4rem 0.6rem;
         font-size: 0.6rem;
+    }
+}
+
+/* ============================================
+   HINT
+   ============================================ */
+
+#hint {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.8rem;
+    color: rgba(0, 255, 255, 0.5);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    z-index: 100;
+    animation: pulse-hint 2s ease-in-out infinite;
+}
+
+@keyframes pulse-hint {
+
+    0%,
+    100% {
+        opacity: 0.5;
+    }
+
+    50% {
+        opacity: 1;
     }
 }

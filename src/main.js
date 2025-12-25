@@ -1,20 +1,16 @@
 /**
  * ============================================
- * MAIN - Cyberpunk Portfolio
+ * MAIN - Interactive Cyberpunk Portfolio
  * ============================================
  * 
- * LEARNING: Scene Composition
- * 
- * Dark cyberpunk aesthetic with:
- * - Central rotating 3D structure
- * - Floating particles
- * - Polished content panel on right
- * - Section navigation with camera movement
+ * Click the glowing orbs to navigate sections.
+ * Each orb triggers dramatic camera movement.
  */
 
 import * as THREE from 'three';
-import { createCyberpunkCore, animateCyberpunkCore } from './cyberpunk.js';
+import { createCyberpunkCore, animateCyberpunkCore, getInteractiveOrbs, highlightOrb } from './cyberpunk.js';
 import { createParticles, animateParticles } from './particles.js';
+import { AudioManager } from './audio.js';
 import { sections } from './data.js';
 
 // ============================================
@@ -23,10 +19,8 @@ import { sections } from './data.js';
 
 const canvas = document.getElementById('scene');
 const scene = new THREE.Scene();
-
-// Dark cyberpunk background
 scene.background = new THREE.Color(0x0a0a0f);
-scene.fog = new THREE.FogExp2(0x0a0a0f, 0.03);
+scene.fog = new THREE.FogExp2(0x0a0a0f, 0.025);
 
 const camera = new THREE.PerspectiveCamera(
     60,
@@ -34,7 +28,7 @@ const camera = new THREE.PerspectiveCamera(
     0.1,
     100
 );
-camera.position.set(0, 4, 12);
+camera.position.set(0, 4, 14);
 camera.lookAt(0, 4, 0);
 
 const renderer = new THREE.WebGLRenderer({
@@ -47,25 +41,31 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.2;
 
 // ============================================
+// AUDIO
+// ============================================
+
+const audio = new AudioManager();
+
+// Initialize audio on first click
+canvas.addEventListener('click', () => audio.init(), { once: true });
+
+// ============================================
 // LIGHTING
 // ============================================
 
-// Dim ambient
 const ambient = new THREE.AmbientLight(0x222233, 0.3);
 scene.add(ambient);
 
-// Key light - cool blue
 const keyLight = new THREE.DirectionalLight(0x4488ff, 0.4);
 keyLight.position.set(5, 10, 5);
 scene.add(keyLight);
 
-// Rim light - magenta
 const rimLight = new THREE.DirectionalLight(0xff00ff, 0.3);
 rimLight.position.set(-5, 5, -5);
 scene.add(rimLight);
 
 // ============================================
-// GROUND - Subtle grid
+// GROUND
 // ============================================
 
 const gridHelper = new THREE.GridHelper(30, 30, 0x222244, 0x111122);
@@ -73,12 +73,8 @@ gridHelper.material.opacity = 0.3;
 gridHelper.material.transparent = true;
 scene.add(gridHelper);
 
-// Ground plane for fog effect
 const groundGeo = new THREE.PlaneGeometry(50, 50);
-const groundMat = new THREE.MeshStandardMaterial({
-    color: 0x050508,
-    roughness: 1
-});
+const groundMat = new THREE.MeshStandardMaterial({ color: 0x050508, roughness: 1 });
 const ground = new THREE.Mesh(groundGeo, groundMat);
 ground.rotation.x = -Math.PI / 2;
 ground.position.y = -0.01;
@@ -91,34 +87,107 @@ scene.add(ground);
 const core = createCyberpunkCore();
 scene.add(core);
 
-const particles = createParticles(100);
-// Make particles more cyberpunk colored
+const particles = createParticles(80);
 particles.children.forEach(p => {
     const colors = [0x00ffff, 0xff00ff, 0x00ff88, 0xff6600];
     p.material.color.setHex(colors[Math.floor(Math.random() * colors.length)]);
-    p.material.opacity = 0.3 + Math.random() * 0.3;
 });
 scene.add(particles);
 
 // ============================================
-// CAMERA POSITIONS FOR SECTIONS
+// RAYCASTER FOR ORB INTERACTION
+// ============================================
+
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+let hoveredOrb = null;
+
+canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+});
+
+canvas.addEventListener('click', () => {
+    if (hoveredOrb && hoveredOrb.userData.section) {
+        switchSection(hoveredOrb.userData.section);
+        audio.playClick();
+    }
+});
+
+function updateRaycast() {
+    raycaster.setFromCamera(mouse, camera);
+
+    const orbs = getInteractiveOrbs(core);
+    const intersects = raycaster.intersectObjects(orbs, true);
+
+    if (intersects.length > 0) {
+        // Find the parent orb group
+        let target = intersects[0].object;
+        while (target && !target.userData.section) {
+            target = target.parent;
+        }
+
+        if (target !== hoveredOrb) {
+            // Unhighlight previous
+            if (hoveredOrb) highlightOrb(hoveredOrb, false);
+
+            // Highlight new
+            hoveredOrb = target;
+            highlightOrb(hoveredOrb, true);
+            audio.playHover();
+
+            canvas.style.cursor = 'pointer';
+        }
+    } else {
+        if (hoveredOrb) {
+            highlightOrb(hoveredOrb, false);
+            hoveredOrb = null;
+            canvas.style.cursor = 'default';
+        }
+    }
+}
+
+// ============================================
+// CAMERA POSITIONS - More dramatic angles
 // ============================================
 
 const cameraPositions = {
-    about: { pos: new THREE.Vector3(0, 4, 12), lookAt: new THREE.Vector3(0, 4, 0) },
-    skills: { pos: new THREE.Vector3(6, 5, 10), lookAt: new THREE.Vector3(0, 4, 0) },
-    projects: { pos: new THREE.Vector3(-6, 4, 10), lookAt: new THREE.Vector3(0, 4, 0) },
-    experience: { pos: new THREE.Vector3(0, 2, 10), lookAt: new THREE.Vector3(0, 3, 0) },
-    contact: { pos: new THREE.Vector3(0, 6, 14), lookAt: new THREE.Vector3(0, 4, 0) }
+    about: {
+        pos: new THREE.Vector3(0, 5, 12),
+        lookAt: new THREE.Vector3(0, 4, 0),
+        coreRotation: 0
+    },
+    skills: {
+        pos: new THREE.Vector3(8, 6, 8),
+        lookAt: new THREE.Vector3(0, 4, 0),
+        coreRotation: Math.PI * 0.4
+    },
+    projects: {
+        pos: new THREE.Vector3(-8, 5, 8),
+        lookAt: new THREE.Vector3(0, 4, 0),
+        coreRotation: -Math.PI * 0.4
+    },
+    experience: {
+        pos: new THREE.Vector3(6, 2, 10),
+        lookAt: new THREE.Vector3(0, 3, 0),
+        coreRotation: Math.PI * 0.8
+    },
+    contact: {
+        pos: new THREE.Vector3(-4, 8, 12),
+        lookAt: new THREE.Vector3(0, 4, 0),
+        coreRotation: -Math.PI * 0.8
+    }
 };
 
 let currentSection = 'about';
 let targetCameraPos = cameraPositions.about.pos.clone();
 let targetLookAt = cameraPositions.about.lookAt.clone();
 let currentLookAt = new THREE.Vector3(0, 4, 0);
+let targetCoreRotation = 0;
 
 // ============================================
-// NAVIGATION
+// SECTION SWITCHING
 // ============================================
 
 const navButtons = document.querySelectorAll('.nav-btn');
@@ -127,40 +196,46 @@ const sectionTitle = document.getElementById('section-title');
 const sectionContent = document.getElementById('section-content');
 
 function switchSection(sectionId) {
-    if (!sections[sectionId]) return;
+    if (!sections[sectionId] || sectionId === currentSection) return;
 
     currentSection = sectionId;
 
-    // Update content panel
-    sectionTitle.textContent = sections[sectionId].title;
-    sectionContent.innerHTML = sections[sectionId].content;
+    // Play transition sound
+    audio.playTransition();
+
+    // Update content panel with animation
+    contentPanel.classList.add('transitioning');
+
+    setTimeout(() => {
+        sectionTitle.textContent = sections[sectionId].title;
+        sectionContent.innerHTML = sections[sectionId].content;
+        contentPanel.classList.remove('transitioning');
+    }, 200);
 
     // Update nav active state
     navButtons.forEach(btn => {
         btn.classList.toggle('active', btn.dataset.section === sectionId);
     });
 
-    // Update camera target
+    // Update camera and core targets
     if (cameraPositions[sectionId]) {
         targetCameraPos = cameraPositions[sectionId].pos.clone();
         targetLookAt = cameraPositions[sectionId].lookAt.clone();
+        targetCoreRotation = cameraPositions[sectionId].coreRotation;
     }
-
-    // Animate content in
-    contentPanel.classList.add('transitioning');
-    setTimeout(() => contentPanel.classList.remove('transitioning'), 300);
 
     console.log('📍 Switched to:', sectionId);
 }
 
-// Setup nav click handlers
+// Nav button clicks
 navButtons.forEach(btn => {
     btn.addEventListener('click', () => {
         switchSection(btn.dataset.section);
+        audio.playClick();
     });
 });
 
-// Initialize with About section
+// Initialize
 switchSection('about');
 
 // ============================================
@@ -174,15 +249,21 @@ function animate() {
 
     const time = clock.getElapsedTime();
 
-    // Animate cyberpunk core
-    animateCyberpunkCore(core, time);
+    // Update raycast for orb hover
+    updateRaycast();
+
+    // Animate core with active section
+    animateCyberpunkCore(core, time, currentSection);
+
+    // Smooth core rotation towards target
+    core.rotation.y += (targetCoreRotation - core.rotation.y) * 0.02;
 
     // Animate particles
     animateParticles(particles, time);
 
     // Smooth camera movement
-    camera.position.lerp(targetCameraPos, 0.02);
-    currentLookAt.lerp(targetLookAt, 0.02);
+    camera.position.lerp(targetCameraPos, 0.025);
+    currentLookAt.lerp(targetLookAt, 0.025);
     camera.lookAt(currentLookAt);
 
     renderer.render(scene, camera);
@@ -202,7 +283,6 @@ window.addEventListener('resize', () => {
 // START
 // ============================================
 
-// Hide loading
 setTimeout(() => {
     const loading = document.getElementById('loading');
     if (loading) {
@@ -213,4 +293,5 @@ setTimeout(() => {
 
 animate();
 
-console.log('🔮 Cyberpunk Portfolio loaded');
+console.log('🔮 Interactive Cyberpunk Portfolio loaded');
+console.log('💡 Click the glowing orbs to navigate!');
