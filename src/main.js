@@ -28,8 +28,8 @@ const camera = new THREE.PerspectiveCamera(
     0.1,
     100
 );
-camera.position.set(0, 4, 14);
-camera.lookAt(0, 4, 0);
+camera.position.set(-3, 5, 14);
+camera.lookAt(-2, 4, 0);
 
 const renderer = new THREE.WebGLRenderer({
     canvas,
@@ -154,29 +154,29 @@ function updateRaycast() {
 
 const cameraPositions = {
     about: {
-        pos: new THREE.Vector3(0, 5, 12),
-        lookAt: new THREE.Vector3(0, 4, 0),
+        pos: new THREE.Vector3(-3, 5, 14),
+        lookAt: new THREE.Vector3(-2, 4, 0),
         coreRotation: 0
     },
     skills: {
-        pos: new THREE.Vector3(8, 6, 8),
-        lookAt: new THREE.Vector3(0, 4, 0),
-        coreRotation: Math.PI * 0.4
+        pos: new THREE.Vector3(5, 8, 10),
+        lookAt: new THREE.Vector3(-2, 5, 0),
+        coreRotation: Math.PI * 0.5
     },
     projects: {
-        pos: new THREE.Vector3(-8, 5, 8),
-        lookAt: new THREE.Vector3(0, 4, 0),
-        coreRotation: -Math.PI * 0.4
+        pos: new THREE.Vector3(-10, 3, 8),
+        lookAt: new THREE.Vector3(-2, 4, 0),
+        coreRotation: -Math.PI * 0.6
     },
     experience: {
-        pos: new THREE.Vector3(6, 2, 10),
-        lookAt: new THREE.Vector3(0, 3, 0),
-        coreRotation: Math.PI * 0.8
+        pos: new THREE.Vector3(2, 1, 12),
+        lookAt: new THREE.Vector3(-2, 3, 0),
+        coreRotation: Math.PI
     },
     contact: {
-        pos: new THREE.Vector3(-4, 8, 12),
-        lookAt: new THREE.Vector3(0, 4, 0),
-        coreRotation: -Math.PI * 0.8
+        pos: new THREE.Vector3(-6, 10, 12),
+        lookAt: new THREE.Vector3(-2, 4, 0),
+        coreRotation: -Math.PI * 0.3
     }
 };
 

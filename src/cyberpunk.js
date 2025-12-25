@@ -1,12 +1,13 @@
 /**
  * ============================================
- * CYBERPUNK CORE - Interactive Vertex Orbs
+ * CYBERPUNK CORE - Refined Version
  * ============================================
  * 
- * LEARNING: Interactive 3D Elements
- * 
- * The central structure now has clickable orbs
- * at vertices that trigger section switches.
+ * Changes:
+ * - Removed middle rings and orbiting cubes
+ * - Smaller vertex orbs on outer vertices
+ * - Added depth with multiple layers
+ * - Core positioned more to the left
  */
 
 import * as THREE from 'three';
@@ -21,119 +22,138 @@ const SECTION_COLORS = {
 };
 
 /**
- * Create the central cyberpunk structure with interactive vertex orbs
+ * Create the central cyberpunk structure
  */
 export function createCyberpunkCore() {
     const group = new THREE.Group();
     group.name = 'cyberpunkCore';
 
     // ============================================
-    // OUTER CAGE - Rotating wireframe
+    // OUTER WIREFRAME LAYERS - For depth perception
     // ============================================
-    const outerGeo = new THREE.IcosahedronGeometry(3.5, 1);
-    const outerMat = new THREE.MeshBasicMaterial({
+
+    // Layer 1 - Outermost, very transparent
+    const outer1Geo = new THREE.IcosahedronGeometry(4, 1);
+    const outer1Mat = new THREE.MeshBasicMaterial({
         color: 0x00ffff,
         wireframe: true,
         transparent: true,
-        opacity: 0.2
+        opacity: 0.08
     });
-    const outerCage = new THREE.Mesh(outerGeo, outerMat);
-    outerCage.name = 'outerCage';
-    group.add(outerCage);
+    const outer1 = new THREE.Mesh(outer1Geo, outer1Mat);
+    outer1.name = 'outerLayer1';
+    group.add(outer1);
 
-    // ============================================
-    // MIDDLE RINGS
-    // ============================================
-    const torusGeo = new THREE.TorusGeometry(2.2, 0.06, 16, 100);
-    const torusMat = new THREE.MeshStandardMaterial({
+    // Layer 2 - Middle layer
+    const outer2Geo = new THREE.IcosahedronGeometry(3.2, 1);
+    const outer2Mat = new THREE.MeshBasicMaterial({
         color: 0xff00ff,
-        emissive: 0xff00ff,
-        emissiveIntensity: 0.4,
-        metalness: 0.8,
-        roughness: 0.2
+        wireframe: true,
+        transparent: true,
+        opacity: 0.12
     });
-    const torus = new THREE.Mesh(torusGeo, torusMat);
-    torus.rotation.x = Math.PI / 2;
-    torus.name = 'middleRing';
-    group.add(torus);
+    const outer2 = new THREE.Mesh(outer2Geo, outer2Mat);
+    outer2.name = 'outerLayer2';
+    group.add(outer2);
 
-    const torus2 = new THREE.Mesh(torusGeo.clone(), torusMat.clone());
-    torus2.material.color.setHex(0x00ffff);
-    torus2.material.emissive.setHex(0x00ffff);
-    torus2.rotation.x = Math.PI / 3;
-    torus2.rotation.y = Math.PI / 4;
-    torus2.name = 'middleRing2';
-    group.add(torus2);
+    // Layer 3 - Inner wireframe
+    const outer3Geo = new THREE.IcosahedronGeometry(2.4, 1);
+    const outer3Mat = new THREE.MeshBasicMaterial({
+        color: 0x00ffff,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.18
+    });
+    const outer3 = new THREE.Mesh(outer3Geo, outer3Mat);
+    outer3.name = 'outerLayer3';
+    group.add(outer3);
 
     // ============================================
-    // INNER CORE
+    // INNER CORE - Solid glowing shape
     // ============================================
-    const coreGeo = new THREE.OctahedronGeometry(0.8, 0);
+
+    const coreGeo = new THREE.IcosahedronGeometry(1.2, 2);
     const coreMat = new THREE.MeshStandardMaterial({
         color: 0xffffff,
         emissive: 0xff6600,
-        emissiveIntensity: 0.8,
+        emissiveIntensity: 0.6,
         metalness: 0.9,
-        roughness: 0.1
+        roughness: 0.1,
+        transparent: true,
+        opacity: 0.85
     });
     const core = new THREE.Mesh(coreGeo, coreMat);
     core.name = 'innerCore';
     group.add(core);
 
+    // Core glow sphere (larger, more transparent)
+    const glowGeo = new THREE.SphereGeometry(1.8, 32, 32);
+    const glowMat = new THREE.MeshBasicMaterial({
+        color: 0xff6600,
+        transparent: true,
+        opacity: 0.08
+    });
+    const glow = new THREE.Mesh(glowGeo, glowMat);
+    glow.name = 'coreGlow';
+    group.add(glow);
+
     // ============================================
-    // INTERACTIVE VERTEX ORBS - One per section
+    // INTERACTIVE VERTEX ORBS - Small, on outer vertices
     // ============================================
+
     const vertexOrbs = new THREE.Group();
     vertexOrbs.name = 'vertexOrbs';
 
     const sections = ['about', 'skills', 'projects', 'experience', 'contact'];
+
+    // Positions on the outermost icosahedron vertices
     const orbPositions = [
-        new THREE.Vector3(0, 3.5, 0),      // Top - About
-        new THREE.Vector3(2.5, 1, 2),      // Right front - Skills
-        new THREE.Vector3(-2.5, 1, 2),     // Left front - Projects
-        new THREE.Vector3(2.5, 1, -2),     // Right back - Experience
-        new THREE.Vector3(-2.5, 1, -2)     // Left back - Contact
+        new THREE.Vector3(0, 4.2, 0),       // Top - About
+        new THREE.Vector3(3.8, 1.2, 1.5),   // Right front - Skills
+        new THREE.Vector3(-3.8, 1.2, 1.5),  // Left front - Projects
+        new THREE.Vector3(2.5, -2, -3),     // Right back low - Experience
+        new THREE.Vector3(-2.5, -2, -3)     // Left back low - Contact
     ];
 
     sections.forEach((section, i) => {
         const orbGroup = new THREE.Group();
         orbGroup.name = `orb_${section}`;
 
-        // Main orb
-        const orbGeo = new THREE.SphereGeometry(0.25, 16, 16);
+        // Small glowing orb
+        const orbGeo = new THREE.SphereGeometry(0.15, 12, 12);
         const orbMat = new THREE.MeshStandardMaterial({
             color: SECTION_COLORS[section],
             emissive: SECTION_COLORS[section],
-            emissiveIntensity: 0.5,
-            metalness: 0.8,
-            roughness: 0.2,
-            transparent: true,
-            opacity: 0.9
+            emissiveIntensity: 0.8,
+            metalness: 0.5,
+            roughness: 0.2
         });
         const orb = new THREE.Mesh(orbGeo, orbMat);
         orbGroup.add(orb);
 
-        // Outer ring around orb
-        const ringGeo = new THREE.TorusGeometry(0.35, 0.02, 8, 32);
+        // Outer ring (subtle)
+        const ringGeo = new THREE.TorusGeometry(0.22, 0.015, 8, 24);
         const ringMat = new THREE.MeshBasicMaterial({
             color: SECTION_COLORS[section],
             transparent: true,
-            opacity: 0.5
+            opacity: 0.4
         });
         const ring = new THREE.Mesh(ringGeo, ringMat);
         ring.name = 'orbRing';
         orbGroup.add(ring);
 
-        // Position
+        // Point light for each orb
+        const orbLight = new THREE.PointLight(SECTION_COLORS[section], 0.3, 3);
+        orbGroup.add(orbLight);
+
         orbGroup.position.copy(orbPositions[i]);
 
-        // Store section data for click detection
         orbGroup.userData = {
             type: 'sectionOrb',
             section: section,
             baseScale: 1,
             targetScale: 1,
-            baseEmissive: 0.5
+            basePosition: orbPositions[i].clone()
         };
 
         vertexOrbs.add(orbGroup);
@@ -142,12 +162,13 @@ export function createCyberpunkCore() {
     group.add(vertexOrbs);
 
     // ============================================
-    // CONNECTING LINES - From core to orbs
+    // CONNECTING LINES - Thin lines from core to orbs
     // ============================================
+
     const lineMat = new THREE.LineBasicMaterial({
-        color: 0x444466,
+        color: 0x333355,
         transparent: true,
-        opacity: 0.3
+        opacity: 0.2
     });
 
     orbPositions.forEach(pos => {
@@ -158,23 +179,16 @@ export function createCyberpunkCore() {
     });
 
     // ============================================
-    // POINT LIGHTS
+    // CENTRAL LIGHT
     // ============================================
-    const coreLight = new THREE.PointLight(0xff6600, 1.5, 10);
+
+    const coreLight = new THREE.PointLight(0xff6600, 2, 12);
     group.add(coreLight);
 
-    const accentLight1 = new THREE.PointLight(0x00ffff, 0.5, 8);
-    accentLight1.position.set(3, 2, 0);
-    group.add(accentLight1);
+    // Position the core to the LEFT to account for right panel
+    group.position.set(-2, 4, 0);
 
-    const accentLight2 = new THREE.PointLight(0xff00ff, 0.5, 8);
-    accentLight2.position.set(-3, -1, 2);
-    group.add(accentLight2);
-
-    // Position whole structure
-    group.position.y = 4;
-
-    console.log('🔷 Cyberpunk core with vertex orbs created');
+    console.log('🔷 Cyberpunk core created (refined)');
     return group;
 }
 
@@ -193,78 +207,95 @@ export function getInteractiveOrbs(core) {
 export function highlightOrb(orb, highlight = true) {
     if (!orb) return;
 
-    orb.userData.targetScale = highlight ? 1.3 : 1;
+    orb.userData.targetScale = highlight ? 1.6 : 1;
 
     const ring = orb.getObjectByName('orbRing');
     if (ring) {
-        ring.material.opacity = highlight ? 0.9 : 0.5;
+        ring.material.opacity = highlight ? 0.9 : 0.4;
     }
 
-    // Increase emissive on hover
+    // Increase light intensity on hover
     orb.children.forEach(child => {
+        if (child.type === 'PointLight') {
+            child.intensity = highlight ? 1 : 0.3;
+        }
         if (child.material && child.material.emissiveIntensity !== undefined) {
-            child.material.emissiveIntensity = highlight ? 1 : 0.5;
+            child.material.emissiveIntensity = highlight ? 1.2 : 0.8;
         }
     });
 }
 
 /**
- * Animate the cyberpunk core (call each frame)
+ * Animate the cyberpunk core
  */
 export function animateCyberpunkCore(core, time, activeSection = null) {
     if (!core) return;
 
-    // Outer cage - slow rotation
-    const outerCage = core.getObjectByName('outerCage');
-    if (outerCage) {
-        outerCage.rotation.x = time * 0.08;
-        outerCage.rotation.y = time * 0.12;
-    }
+    // Outer layers - different rotation speeds for depth
+    const layer1 = core.getObjectByName('outerLayer1');
+    const layer2 = core.getObjectByName('outerLayer2');
+    const layer3 = core.getObjectByName('outerLayer3');
 
-    // Middle rings
-    const ring1 = core.getObjectByName('middleRing');
-    const ring2 = core.getObjectByName('middleRing2');
-    if (ring1) ring1.rotation.z = time * 0.2;
-    if (ring2) ring2.rotation.z = -time * 0.18;
+    if (layer1) {
+        layer1.rotation.x = time * 0.05;
+        layer1.rotation.y = time * 0.08;
+    }
+    if (layer2) {
+        layer2.rotation.x = -time * 0.07;
+        layer2.rotation.y = time * 0.06;
+    }
+    if (layer3) {
+        layer3.rotation.x = time * 0.1;
+        layer3.rotation.y = -time * 0.09;
+    }
 
     // Inner core - pulsing
     const innerCore = core.getObjectByName('innerCore');
+    const coreGlow = core.getObjectByName('coreGlow');
     if (innerCore) {
-        innerCore.rotation.x = time * 0.4;
-        innerCore.rotation.y = time * 0.5;
-        const pulse = 1 + Math.sin(time * 2) * 0.08;
+        innerCore.rotation.x = time * 0.3;
+        innerCore.rotation.y = time * 0.4;
+        const pulse = 1 + Math.sin(time * 2) * 0.05;
         innerCore.scale.setScalar(pulse);
     }
+    if (coreGlow) {
+        const glowPulse = 1 + Math.sin(time * 1.5) * 0.1;
+        coreGlow.scale.setScalar(glowPulse);
+        coreGlow.material.opacity = 0.06 + Math.sin(time * 2) * 0.03;
+    }
 
-    // Vertex orbs - rotate rings and animate scale
+    // Vertex orbs
     const vertexOrbs = core.getObjectByName('vertexOrbs');
     if (vertexOrbs) {
         vertexOrbs.children.forEach((orbGroup, i) => {
-            // Rotate the ring
+            // Rotate ring
             const ring = orbGroup.getObjectByName('orbRing');
             if (ring) {
-                ring.rotation.x = time * 1.5;
-                ring.rotation.y = time * 0.8;
+                ring.rotation.x = time * 2;
+                ring.rotation.y = time * 1.2;
             }
 
             // Smooth scale transition
             const currentScale = orbGroup.scale.x;
             const targetScale = orbGroup.userData.targetScale;
-            orbGroup.scale.setScalar(currentScale + (targetScale - currentScale) * 0.1);
+            orbGroup.scale.setScalar(currentScale + (targetScale - currentScale) * 0.12);
 
-            // Highlight active section orb
+            // Highlight active section
             if (activeSection && orbGroup.userData.section === activeSection) {
-                orbGroup.userData.targetScale = 1.2;
+                orbGroup.userData.targetScale = 1.4;
             }
 
-            // Gentle float
-            orbGroup.position.y = orbGroup.position.y + Math.sin(time * 1.5 + i) * 0.002;
+            // Subtle float
+            const basePos = orbGroup.userData.basePosition;
+            if (basePos) {
+                orbGroup.position.y = basePos.y + Math.sin(time * 1.2 + i * 1.5) * 0.1;
+            }
         });
     }
 
     // Pulsing core light
-    const lights = core.children.filter(c => c.type === 'PointLight');
-    if (lights[0]) {
-        lights[0].intensity = 1.5 + Math.sin(time * 3) * 0.5;
+    const coreLight = core.children.find(c => c.type === 'PointLight' && c.color.getHex() === 0xff6600);
+    if (coreLight) {
+        coreLight.intensity = 2 + Math.sin(time * 3) * 0.5;
     }
 }
