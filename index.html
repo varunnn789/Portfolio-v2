@@ -15,31 +15,49 @@
 
   <!-- Loading -->
   <div id="loading">
-    <span>✨ Loading...</span>
+    <span>INITIALIZING...</span>
   </div>
 
-  <!-- Header with Logo and Navigation -->
+  <!-- Header with Logo and Audio Controls -->
   <header id="header">
     <div class="logo">VARUN SINGH</div>
 
-    <nav id="nav">
-      <button class="nav-btn active" data-section="about">About</button>
-      <button class="nav-btn" data-section="skills">Skills</button>
-      <button class="nav-btn" data-section="projects">Projects</button>
-      <button class="nav-btn" data-section="experience">Experience</button>
-      <button class="nav-btn" data-section="contact">Contact</button>
-    </nav>
+    <div class="header-right">
+      <!-- Audio Controls -->
+      <div id="audio-controls">
+        <button id="btn-toggle-sound" title="Toggle Sound">
+          <span class="icon-sound-on">🔊</span>
+          <span class="icon-sound-off" style="display:none;">🔇</span>
+        </button>
+        <button id="btn-switch-song" title="Next Song">⏭️</button>
+        <span id="song-name">Click to play</span>
+      </div>
+
+      <!-- Navigation -->
+      <nav id="nav">
+        <button class="nav-btn" data-section="about">About</button>
+        <button class="nav-btn" data-section="skills">Skills</button>
+        <button class="nav-btn" data-section="projects">Projects</button>
+        <button class="nav-btn" data-section="experience">Experience</button>
+        <button class="nav-btn" data-section="contact">Contact</button>
+      </nav>
+    </div>
   </header>
 
-  <!-- Instruction hint -->
-  <div id="hint">Click the glowing orbs to explore</div>
+  <!-- Orb Labels Container -->
+  <div id="labels"></div>
 
-  <!-- Content Panel (Right Side) -->
+  <!-- Instruction hint -->
+  <div id="hint">
+    <span>CLICK THE GLOWING ORBS TO EXPLORE</span>
+    <span class="hint-sub">Drag to rotate • Scroll to zoom</span>
+  </div>
+
+  <!-- Content Panel (Hidden on start) -->
   <aside id="content">
-    <h2 id="section-title">About Me</h2>
-    <div id="section-content">
-      <!-- Content injected by JS -->
-    </div>
+    <button id="close-panel">✕</button>
+    <h2 id="section-title"></h2>
+    <div id="section-content"></div>
   </aside>
 
   <script type="module" src="/src/main.js"></script>

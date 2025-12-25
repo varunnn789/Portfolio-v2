@@ -1,14 +1,28 @@
 /**
  * ============================================
- * MAIN - Interactive Cyberpunk Portfolio
+ * MAIN - Core Expansion + Camera Focus
  * ============================================
  * 
- * Click the glowing orbs to navigate sections.
- * Each orb triggers dramatic camera movement.
+ * When orb is clicked:
+ * 1. ENTIRE core structure expands (3x scale)
+ * 2. Camera animates to focus on the clicked orb
+ * 3. Panel slides in
+ * 
+ * Closing panel:
+ * 1. Core collapses back
+ * 2. Camera returns to default
  */
 
 import * as THREE from 'three';
-import { createCyberpunkCore, animateCyberpunkCore, getInteractiveOrbs, highlightOrb } from './cyberpunk.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import {
+    createCyberpunkCore,
+    animateCyberpunkCore,
+    getInteractiveOrbs,
+    highlightOrb,
+    expandToOrb,
+    collapseCore
+} from './cyberpunk.js';
 import { createParticles, animateParticles } from './particles.js';
 import { AudioManager } from './audio.js';
 import { sections } from './data.js';
@@ -20,16 +34,21 @@ import { sections } from './data.js';
 const canvas = document.getElementById('scene');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0a0a0f);
-scene.fog = new THREE.FogExp2(0x0a0a0f, 0.025);
+scene.fog = new THREE.FogExp2(0x0a0a0f, 0.012);
 
 const camera = new THREE.PerspectiveCamera(
     60,
     window.innerWidth / window.innerHeight,
     0.1,
-    100
+    200
 );
-camera.position.set(-3, 5, 14);
-camera.lookAt(-2, 4, 0);
+
+// Default camera position
+const defaultCameraPos = new THREE.Vector3(0, 2, 18);
+const defaultLookAt = new THREE.Vector3(0, 0, 0);
+
+camera.position.copy(defaultCameraPos);
+camera.lookAt(defaultLookAt);
 
 const renderer = new THREE.WebGLRenderer({
     canvas,
@@ -41,13 +60,126 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.2;
 
 // ============================================
+// ORBIT CONTROLS
+// ============================================
+
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.enablePan = true;
+controls.panSpeed = 0.5;
+controls.enableZoom = true;
+controls.zoomSpeed = 0.8;
+controls.minDistance = 8;
+controls.maxDistance = 40;
+controls.target.set(0, 0, 0);
+
+// ============================================
+// CAMERA ANIMATION STATE
+// ============================================
+
+let cameraAnimating = false;
+let cameraTargetPos = defaultCameraPos.clone();
+let cameraTargetLookAt = defaultLookAt.clone();
+
+function animateCameraToOrb(orbWorldPos) {
+    if (!orbWorldPos) return;
+
+    // Calculate camera position:
+    // Position camera so BOTH the clicked orb AND the core are visible
+    // Camera goes to the SAME SIDE as the orb, but further back
+    // This puts the orb in the foreground with the core visible behind/beside it
+
+    const direction = orbWorldPos.clone().normalize();
+
+    // Camera position: on the SAME SIDE as the orb, but further out
+    // This creates a view where orb is prominent with core visible
+    // Add some offset so we see orb + core together
+    const sideOffset = direction.clone().multiplyScalar(16); // Same direction as orb
+    const upOffset = new THREE.Vector3(0, 4, 0); // Slight elevation
+
+    cameraTargetPos = sideOffset.add(upOffset);
+
+    // Look at a point BETWEEN the orb and the core center
+    // This keeps both in frame
+    const midpoint = orbWorldPos.clone().multiplyScalar(0.6); // 60% towards the orb from center
+    cameraTargetLookAt = midpoint;
+
+    cameraAnimating = true;
+    controls.enabled = false; // Disable controls during animation
+
+    console.log('📷 Camera focusing: orb in foreground, core visible');
+}
+
+function animateCameraToDefault() {
+    cameraTargetPos = defaultCameraPos.clone();
+    cameraTargetLookAt = defaultLookAt.clone();
+    cameraAnimating = true;
+
+    // Re-enable controls after a delay
+    setTimeout(() => {
+        controls.enabled = true;
+    }, 800);
+
+    console.log('📷 Camera returning to default');
+}
+
+function updateCameraAnimation() {
+    if (!cameraAnimating) return;
+
+    // Smooth camera position
+    camera.position.lerp(cameraTargetPos, 0.04);
+
+    // Smooth look-at
+    const currentLookAt = new THREE.Vector3();
+    camera.getWorldDirection(currentLookAt);
+    currentLookAt.multiplyScalar(10).add(camera.position);
+    currentLookAt.lerp(cameraTargetLookAt, 0.04);
+    camera.lookAt(cameraTargetLookAt);
+
+    // Update controls target
+    controls.target.lerp(cameraTargetLookAt, 0.04);
+
+    // Check if animation is done
+    if (camera.position.distanceTo(cameraTargetPos) < 0.1) {
+        cameraAnimating = false;
+    }
+}
+
+// ============================================
 // AUDIO
 // ============================================
 
 const audio = new AudioManager();
 
-// Initialize audio on first click
-canvas.addEventListener('click', () => audio.init(), { once: true });
+const btnToggleSound = document.getElementById('btn-toggle-sound');
+const btnSwitchSong = document.getElementById('btn-switch-song');
+const songNameEl = document.getElementById('song-name');
+const iconSoundOn = btnToggleSound?.querySelector('.icon-sound-on');
+const iconSoundOff = btnToggleSound?.querySelector('.icon-sound-off');
+
+if (btnToggleSound) {
+    btnToggleSound.addEventListener('click', () => {
+        const isOn = audio.toggle();
+        if (iconSoundOn) iconSoundOn.style.display = isOn ? 'inline' : 'none';
+        if (iconSoundOff) iconSoundOff.style.display = isOn ? 'none' : 'inline';
+        if (songNameEl) songNameEl.textContent = isOn ? audio.getCurrentSong() : 'Muted';
+    });
+}
+
+if (btnSwitchSong) {
+    btnSwitchSong.addEventListener('click', () => {
+        const newSong = audio.nextSong();
+        if (songNameEl) songNameEl.textContent = newSong;
+    });
+}
+
+canvas.addEventListener('click', () => {
+    if (!audio.audioElement) {
+        audio.init();
+        if (songNameEl) songNameEl.textContent = audio.getCurrentSong();
+    }
+}, { once: true });
 
 // ============================================
 // LIGHTING
@@ -68,30 +200,76 @@ scene.add(rimLight);
 // GROUND
 // ============================================
 
-const gridHelper = new THREE.GridHelper(30, 30, 0x222244, 0x111122);
-gridHelper.material.opacity = 0.3;
+const gridHelper = new THREE.GridHelper(50, 50, 0x222244, 0x111122);
+gridHelper.material.opacity = 0.15;
 gridHelper.material.transparent = true;
+gridHelper.position.y = -10;
 scene.add(gridHelper);
 
-const groundGeo = new THREE.PlaneGeometry(50, 50);
-const groundMat = new THREE.MeshStandardMaterial({ color: 0x050508, roughness: 1 });
-const ground = new THREE.Mesh(groundGeo, groundMat);
-ground.rotation.x = -Math.PI / 2;
-ground.position.y = -0.01;
-scene.add(ground);
-
 // ============================================
-// CYBERPUNK CORE & PARTICLES
+// CORE & PARTICLES
 // ============================================
 
 const core = createCyberpunkCore();
 scene.add(core);
 
-const particles = createParticles(80);
+const particles = createParticles(100);
 scene.add(particles);
 
 // ============================================
-// RAYCASTER FOR ORB INTERACTION
+// ORB LABELS
+// ============================================
+
+const labelContainer = document.getElementById('labels');
+
+function createLabels() {
+    if (!labelContainer) return;
+
+    const orbs = getInteractiveOrbs(core);
+
+    orbs.forEach(orbGroup => {
+        const label = document.createElement('div');
+        label.className = 'orb-label';
+        label.textContent = orbGroup.userData.label;
+        label.dataset.section = orbGroup.userData.section;
+        label.style.color = '#' + orbGroup.children[0].material.color.getHexString();
+        labelContainer.appendChild(label);
+    });
+}
+
+function updateLabels() {
+    if (!labelContainer) return;
+
+    const orbs = getInteractiveOrbs(core);
+    const labels = labelContainer.querySelectorAll('.orb-label');
+
+    orbs.forEach((orbGroup, i) => {
+        const label = labels[i];
+        if (!label) return;
+
+        // Get world position (includes core scaling)
+        const worldPos = new THREE.Vector3();
+        orbGroup.getWorldPosition(worldPos);
+
+        const screenPos = worldPos.clone().project(camera);
+
+        const x = (screenPos.x * 0.5 + 0.5) * window.innerWidth;
+        const y = (1 - (screenPos.y * 0.5 + 0.5)) * window.innerHeight;
+
+        if (screenPos.z > 1) {
+            label.style.display = 'none';
+        } else {
+            label.style.display = 'block';
+            label.style.left = x + 'px';
+            label.style.top = (y - 50) + 'px';
+        }
+    });
+}
+
+createLabels();
+
+// ============================================
+// RAYCASTER
 // ============================================
 
 const raycaster = new THREE.Raycaster();
@@ -106,7 +284,11 @@ canvas.addEventListener('mousemove', (e) => {
 
 canvas.addEventListener('click', () => {
     if (hoveredOrb && hoveredOrb.userData.section) {
-        switchSection(hoveredOrb.userData.section);
+        // Expand core and focus camera on this orb
+        const orbWorldPos = expandToOrb(core, hoveredOrb);
+        animateCameraToOrb(orbWorldPos);
+
+        showSection(hoveredOrb.userData.section);
         audio.playClick();
     }
 });
@@ -118,17 +300,14 @@ function updateRaycast() {
     const intersects = raycaster.intersectObjects(orbs, true);
 
     if (intersects.length > 0) {
-        // Find the parent orb group
         let target = intersects[0].object;
         while (target && !target.userData.section) {
             target = target.parent;
         }
 
         if (target !== hoveredOrb) {
-            // Unhighlight previous
             if (hoveredOrb) highlightOrb(hoveredOrb, false);
 
-            // Highlight new
             hoveredOrb = target;
             highlightOrb(hoveredOrb, true);
             audio.playHover();
@@ -139,103 +318,85 @@ function updateRaycast() {
         if (hoveredOrb) {
             highlightOrb(hoveredOrb, false);
             hoveredOrb = null;
-            canvas.style.cursor = 'default';
+            canvas.style.cursor = 'grab';
         }
     }
 }
 
 // ============================================
-// CAMERA POSITIONS - More dramatic angles
+// PANEL CONTROL
 // ============================================
 
-const cameraPositions = {
-    about: {
-        pos: new THREE.Vector3(-3, 5, 14),
-        lookAt: new THREE.Vector3(-2, 4, 0),
-        coreRotation: 0
-    },
-    skills: {
-        pos: new THREE.Vector3(5, 8, 10),
-        lookAt: new THREE.Vector3(-2, 5, 0),
-        coreRotation: Math.PI * 0.5
-    },
-    projects: {
-        pos: new THREE.Vector3(-10, 3, 8),
-        lookAt: new THREE.Vector3(-2, 4, 0),
-        coreRotation: -Math.PI * 0.6
-    },
-    experience: {
-        pos: new THREE.Vector3(2, 1, 12),
-        lookAt: new THREE.Vector3(-2, 3, 0),
-        coreRotation: Math.PI
-    },
-    contact: {
-        pos: new THREE.Vector3(-6, 10, 12),
-        lookAt: new THREE.Vector3(-2, 4, 0),
-        coreRotation: -Math.PI * 0.3
-    }
-};
-
-let currentSection = 'about';
-let targetCameraPos = cameraPositions.about.pos.clone();
-let targetLookAt = cameraPositions.about.lookAt.clone();
-let currentLookAt = new THREE.Vector3(0, 4, 0);
-let targetCoreRotation = 0;
-
-// ============================================
-// SECTION SWITCHING
-// ============================================
-
-const navButtons = document.querySelectorAll('.nav-btn');
 const contentPanel = document.getElementById('content');
 const sectionTitle = document.getElementById('section-title');
 const sectionContent = document.getElementById('section-content');
+const closeBtn = document.getElementById('close-panel');
 
-function switchSection(sectionId) {
-    if (!sections[sectionId] || sectionId === currentSection) return;
+let currentSection = null;
+let panelVisible = false;
+
+function showSection(sectionId) {
+    if (!sections[sectionId]) return;
 
     currentSection = sectionId;
+    panelVisible = true;
 
-    // Play transition sound
     audio.playTransition();
 
-    // Update content panel with animation
-    contentPanel.classList.add('transitioning');
+    if (sectionTitle) sectionTitle.textContent = sections[sectionId].title;
+    if (sectionContent) sectionContent.innerHTML = sections[sectionId].content;
 
-    setTimeout(() => {
-        sectionTitle.textContent = sections[sectionId].title;
-        sectionContent.innerHTML = sections[sectionId].content;
-        contentPanel.classList.remove('transitioning');
-    }, 200);
+    if (contentPanel) contentPanel.classList.add('visible');
 
-    // Update nav active state
+    const navButtons = document.querySelectorAll('.nav-btn');
     navButtons.forEach(btn => {
         btn.classList.toggle('active', btn.dataset.section === sectionId);
     });
 
-    // Update camera and core targets
-    if (cameraPositions[sectionId]) {
-        targetCameraPos = cameraPositions[sectionId].pos.clone();
-        targetLookAt = cameraPositions[sectionId].lookAt.clone();
-        targetCoreRotation = cameraPositions[sectionId].coreRotation;
-    }
-
-    console.log('📍 Switched to:', sectionId);
+    console.log('📍 Showing:', sectionId);
 }
 
-// Nav button clicks
+function hidePanel() {
+    panelVisible = false;
+    currentSection = null;
+
+    if (contentPanel) contentPanel.classList.remove('visible');
+
+    // Collapse core and return camera
+    collapseCore(core);
+    animateCameraToDefault();
+
+    // Remove nav active states
+    const navButtons = document.querySelectorAll('.nav-btn');
+    navButtons.forEach(btn => btn.classList.remove('active'));
+}
+
+if (closeBtn) {
+    closeBtn.addEventListener('click', hidePanel);
+}
+
+// Nav buttons also trigger expansion
+const navButtons = document.querySelectorAll('.nav-btn');
 navButtons.forEach(btn => {
     btn.addEventListener('click', () => {
-        switchSection(btn.dataset.section);
+        const sectionId = btn.dataset.section;
+
+        // Find the corresponding orb
+        const orbs = getInteractiveOrbs(core);
+        const targetOrb = orbs.find(o => o.userData.section === sectionId);
+
+        if (targetOrb) {
+            const orbWorldPos = expandToOrb(core, targetOrb);
+            animateCameraToOrb(orbWorldPos);
+        }
+
+        showSection(sectionId);
         audio.playClick();
     });
 });
 
-// Initialize
-switchSection('about');
-
 // ============================================
-// ANIMATION LOOP
+// ANIMATION
 // ============================================
 
 const clock = new THREE.Clock();
@@ -245,23 +406,15 @@ function animate() {
 
     const time = clock.getElapsedTime();
 
-    // Update raycast for orb hover
+    controls.update();
+    updateCameraAnimation();
     updateRaycast();
+    updateLabels();
 
-    // Animate core with active section
-    animateCyberpunkCore(core, time, currentSection);
+    animateCyberpunkCore(core, time);
 
-    // Smooth core rotation towards target
-    core.rotation.y += (targetCoreRotation - core.rotation.y) * 0.02;
-
-    // Animate particles around core
     const corePos = { x: core.position.x, y: core.position.y, z: core.position.z };
     animateParticles(particles, time, corePos);
-
-    // Smooth camera movement
-    camera.position.lerp(targetCameraPos, 0.025);
-    currentLookAt.lerp(targetLookAt, 0.025);
-    camera.lookAt(currentLookAt);
 
     renderer.render(scene, camera);
 }
@@ -290,5 +443,4 @@ setTimeout(() => {
 
 animate();
 
-console.log('🔮 Interactive Cyberpunk Portfolio loaded');
-console.log('💡 Click the glowing orbs to navigate!');
+console.log('🔮 Spacey Portfolio - Core expands, camera focuses on clicked orb');
