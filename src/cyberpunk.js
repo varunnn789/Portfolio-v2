@@ -1,104 +1,98 @@
 /**
  * ============================================
- * CYBERPUNK CORE - Refined Version
+ * CYBERPUNK CORE - Solar System Style
  * ============================================
  * 
- * Changes:
- * - Removed middle rings and orbiting cubes
- * - Smaller vertex orbs on outer vertices
- * - Added depth with multiple layers
- * - Core positioned more to the left
+ * - Vertex orbs FIXED on exact positions (no floating)
+ * - Solar system style rotating rings
+ * - Core expands on section click
  */
 
 import * as THREE from 'three';
 
-// Section colors
 const SECTION_COLORS = {
-    about: 0x00ffff,    // Cyan
-    skills: 0xff00ff,   // Magenta
-    projects: 0x00ff88, // Green
-    experience: 0xff6600, // Orange
-    contact: 0xffff00   // Yellow
+    about: 0x00ffff,
+    skills: 0xff00ff,
+    projects: 0x00ff88,
+    experience: 0xff6600,
+    contact: 0xffff00
 };
 
 /**
- * Create the central cyberpunk structure
+ * Create the cyberpunk core
  */
 export function createCyberpunkCore() {
     const group = new THREE.Group();
     group.name = 'cyberpunkCore';
 
     // ============================================
-    // OUTER WIREFRAME LAYERS - For depth perception
+    // LAYERED WIREFRAME SHELLS
     // ============================================
 
-    // Layer 1 - Outermost, very transparent
-    const outer1Geo = new THREE.IcosahedronGeometry(4, 1);
-    const outer1Mat = new THREE.MeshBasicMaterial({
+    const layer1Geo = new THREE.IcosahedronGeometry(4.5, 1);
+    const layer1Mat = new THREE.MeshBasicMaterial({
         color: 0x00ffff,
         wireframe: true,
         transparent: true,
-        opacity: 0.08
+        opacity: 0.06
     });
-    const outer1 = new THREE.Mesh(outer1Geo, outer1Mat);
-    outer1.name = 'outerLayer1';
-    group.add(outer1);
+    const layer1 = new THREE.Mesh(layer1Geo, layer1Mat);
+    layer1.name = 'layer1';
+    group.add(layer1);
 
-    // Layer 2 - Middle layer
-    const outer2Geo = new THREE.IcosahedronGeometry(3.2, 1);
-    const outer2Mat = new THREE.MeshBasicMaterial({
+    const layer2Geo = new THREE.IcosahedronGeometry(3.5, 1);
+    const layer2Mat = new THREE.MeshBasicMaterial({
         color: 0xff00ff,
         wireframe: true,
         transparent: true,
-        opacity: 0.12
+        opacity: 0.1
     });
-    const outer2 = new THREE.Mesh(outer2Geo, outer2Mat);
-    outer2.name = 'outerLayer2';
-    group.add(outer2);
+    const layer2 = new THREE.Mesh(layer2Geo, layer2Mat);
+    layer2.name = 'layer2';
+    group.add(layer2);
 
-    // Layer 3 - Inner wireframe
-    const outer3Geo = new THREE.IcosahedronGeometry(2.4, 1);
-    const outer3Mat = new THREE.MeshBasicMaterial({
+    const layer3Geo = new THREE.IcosahedronGeometry(2.5, 1);
+    const layer3Mat = new THREE.MeshBasicMaterial({
         color: 0x00ffff,
         wireframe: true,
         transparent: true,
-        opacity: 0.18
+        opacity: 0.15
     });
-    const outer3 = new THREE.Mesh(outer3Geo, outer3Mat);
-    outer3.name = 'outerLayer3';
-    group.add(outer3);
+    const layer3 = new THREE.Mesh(layer3Geo, layer3Mat);
+    layer3.name = 'layer3';
+    group.add(layer3);
 
     // ============================================
-    // INNER CORE - Solid glowing shape
+    // INNER CORE
     // ============================================
 
-    const coreGeo = new THREE.IcosahedronGeometry(1.2, 2);
+    const coreGeo = new THREE.IcosahedronGeometry(1.5, 2);
     const coreMat = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
+        color: 0xff6600,
         emissive: 0xff6600,
-        emissiveIntensity: 0.6,
-        metalness: 0.9,
-        roughness: 0.1,
+        emissiveIntensity: 0.5,
+        metalness: 0.7,
+        roughness: 0.3,
         transparent: true,
-        opacity: 0.85
+        opacity: 0.9
     });
     const core = new THREE.Mesh(coreGeo, coreMat);
     core.name = 'innerCore';
     group.add(core);
 
-    // Core glow sphere (larger, more transparent)
-    const glowGeo = new THREE.SphereGeometry(1.8, 32, 32);
+    // Core glow
+    const glowGeo = new THREE.SphereGeometry(2, 32, 32);
     const glowMat = new THREE.MeshBasicMaterial({
         color: 0xff6600,
         transparent: true,
-        opacity: 0.08
+        opacity: 0.1
     });
     const glow = new THREE.Mesh(glowGeo, glowMat);
     glow.name = 'coreGlow';
     group.add(glow);
 
     // ============================================
-    // INTERACTIVE VERTEX ORBS - Small, on outer vertices
+    // VERTEX ORBS - Fixed positions, solar system rings
     // ============================================
 
     const vertexOrbs = new THREE.Group();
@@ -106,46 +100,63 @@ export function createCyberpunkCore() {
 
     const sections = ['about', 'skills', 'projects', 'experience', 'contact'];
 
-    // Positions on the outermost icosahedron vertices
+    // Exact vertex positions on outer shell
     const orbPositions = [
-        new THREE.Vector3(0, 4.2, 0),       // Top - About
-        new THREE.Vector3(3.8, 1.2, 1.5),   // Right front - Skills
-        new THREE.Vector3(-3.8, 1.2, 1.5),  // Left front - Projects
-        new THREE.Vector3(2.5, -2, -3),     // Right back low - Experience
-        new THREE.Vector3(-2.5, -2, -3)     // Left back low - Contact
+        new THREE.Vector3(0, 4.8, 0),       // Top
+        new THREE.Vector3(4.2, 1.5, 1.5),   // Right front
+        new THREE.Vector3(-4.2, 1.5, 1.5),  // Left front
+        new THREE.Vector3(3, -2.5, -3),     // Right back low
+        new THREE.Vector3(-3, -2.5, -3)     // Left back low
     ];
 
     sections.forEach((section, i) => {
         const orbGroup = new THREE.Group();
         orbGroup.name = `orb_${section}`;
 
-        // Small glowing orb
-        const orbGeo = new THREE.SphereGeometry(0.15, 12, 12);
+        // Central sphere
+        const orbGeo = new THREE.SphereGeometry(0.12, 12, 12);
         const orbMat = new THREE.MeshStandardMaterial({
             color: SECTION_COLORS[section],
             emissive: SECTION_COLORS[section],
-            emissiveIntensity: 0.8,
+            emissiveIntensity: 0.9,
             metalness: 0.5,
             roughness: 0.2
         });
         const orb = new THREE.Mesh(orbGeo, orbMat);
         orbGroup.add(orb);
 
-        // Outer ring (subtle)
-        const ringGeo = new THREE.TorusGeometry(0.22, 0.015, 8, 24);
-        const ringMat = new THREE.MeshBasicMaterial({
+        // Orbital ring 1 (tilted)
+        const ring1Geo = new THREE.TorusGeometry(0.25, 0.008, 8, 32);
+        const ring1Mat = new THREE.MeshBasicMaterial({
             color: SECTION_COLORS[section],
             transparent: true,
-            opacity: 0.4
+            opacity: 0.6
         });
-        const ring = new THREE.Mesh(ringGeo, ringMat);
-        ring.name = 'orbRing';
-        orbGroup.add(ring);
+        const ring1 = new THREE.Mesh(ring1Geo, ring1Mat);
+        ring1.rotation.x = Math.PI / 3;
+        ring1.name = 'ring1';
+        orbGroup.add(ring1);
 
-        // Point light for each orb
-        const orbLight = new THREE.PointLight(SECTION_COLORS[section], 0.3, 3);
-        orbGroup.add(orbLight);
+        // Orbital ring 2 (different tilt)
+        const ring2 = new THREE.Mesh(ring1Geo.clone(), ring1Mat.clone());
+        ring2.rotation.x = -Math.PI / 4;
+        ring2.rotation.y = Math.PI / 2;
+        ring2.name = 'ring2';
+        orbGroup.add(ring2);
 
+        // Small orbiting moon
+        const moonGeo = new THREE.SphereGeometry(0.03, 6, 6);
+        const moonMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const moon = new THREE.Mesh(moonGeo, moonMat);
+        moon.position.set(0.25, 0, 0);
+        moon.name = 'moon';
+        orbGroup.add(moon);
+
+        // Point light
+        const light = new THREE.PointLight(SECTION_COLORS[section], 0.4, 4);
+        orbGroup.add(light);
+
+        // FIXED position (no floating)
         orbGroup.position.copy(orbPositions[i]);
 
         orbGroup.userData = {
@@ -153,7 +164,7 @@ export function createCyberpunkCore() {
             section: section,
             baseScale: 1,
             targetScale: 1,
-            basePosition: orbPositions[i].clone()
+            fixedPosition: orbPositions[i].clone() // Store original
         };
 
         vertexOrbs.add(orbGroup);
@@ -162,13 +173,13 @@ export function createCyberpunkCore() {
     group.add(vertexOrbs);
 
     // ============================================
-    // CONNECTING LINES - Thin lines from core to orbs
+    // CONNECTING LINES
     // ============================================
 
     const lineMat = new THREE.LineBasicMaterial({
         color: 0x333355,
         transparent: true,
-        opacity: 0.2
+        opacity: 0.15
     });
 
     orbPositions.forEach(pos => {
@@ -179,21 +190,27 @@ export function createCyberpunkCore() {
     });
 
     // ============================================
-    // CENTRAL LIGHT
+    // LIGHTS
     // ============================================
 
-    const coreLight = new THREE.PointLight(0xff6600, 2, 12);
+    const coreLight = new THREE.PointLight(0xff6600, 2.5, 15);
     group.add(coreLight);
 
-    // Position the core to the LEFT to account for right panel
+    // Position left to account for right panel
     group.position.set(-2, 4, 0);
 
-    console.log('🔷 Cyberpunk core created (refined)');
+    // Store for expansion animation
+    group.userData = {
+        baseScale: 1,
+        targetScale: 1
+    };
+
+    console.log('🔷 Cyberpunk core (solar system style) created');
     return group;
 }
 
 /**
- * Get all interactive orbs for raycasting
+ * Get orbs for raycasting
  */
 export function getInteractiveOrbs(core) {
     const vertexOrbs = core.getObjectByName('vertexOrbs');
@@ -202,100 +219,112 @@ export function getInteractiveOrbs(core) {
 }
 
 /**
- * Highlight an orb on hover
+ * Highlight orb
  */
 export function highlightOrb(orb, highlight = true) {
     if (!orb) return;
 
-    orb.userData.targetScale = highlight ? 1.6 : 1;
+    orb.userData.targetScale = highlight ? 1.8 : 1;
 
-    const ring = orb.getObjectByName('orbRing');
-    if (ring) {
-        ring.material.opacity = highlight ? 0.9 : 0.4;
-    }
-
-    // Increase light intensity on hover
     orb.children.forEach(child => {
+        if (child.name === 'ring1' || child.name === 'ring2') {
+            child.material.opacity = highlight ? 1 : 0.6;
+        }
         if (child.type === 'PointLight') {
-            child.intensity = highlight ? 1 : 0.3;
+            child.intensity = highlight ? 1.2 : 0.4;
         }
         if (child.material && child.material.emissiveIntensity !== undefined) {
-            child.material.emissiveIntensity = highlight ? 1.2 : 0.8;
+            child.material.emissiveIntensity = highlight ? 1.5 : 0.9;
         }
     });
 }
 
 /**
- * Animate the cyberpunk core
+ * Animate core
  */
 export function animateCyberpunkCore(core, time, activeSection = null) {
     if (!core) return;
 
-    // Outer layers - different rotation speeds for depth
-    const layer1 = core.getObjectByName('outerLayer1');
-    const layer2 = core.getObjectByName('outerLayer2');
-    const layer3 = core.getObjectByName('outerLayer3');
+    // Rotate layers at different speeds
+    const layer1 = core.getObjectByName('layer1');
+    const layer2 = core.getObjectByName('layer2');
+    const layer3 = core.getObjectByName('layer3');
 
     if (layer1) {
-        layer1.rotation.x = time * 0.05;
-        layer1.rotation.y = time * 0.08;
+        layer1.rotation.x = time * 0.04;
+        layer1.rotation.y = time * 0.06;
     }
     if (layer2) {
-        layer2.rotation.x = -time * 0.07;
-        layer2.rotation.y = time * 0.06;
+        layer2.rotation.x = -time * 0.05;
+        layer2.rotation.y = time * 0.04;
     }
     if (layer3) {
-        layer3.rotation.x = time * 0.1;
-        layer3.rotation.y = -time * 0.09;
+        layer3.rotation.x = time * 0.08;
+        layer3.rotation.y = -time * 0.07;
     }
 
-    // Inner core - pulsing
+    // Inner core pulse
     const innerCore = core.getObjectByName('innerCore');
     const coreGlow = core.getObjectByName('coreGlow');
     if (innerCore) {
-        innerCore.rotation.x = time * 0.3;
-        innerCore.rotation.y = time * 0.4;
+        innerCore.rotation.x = time * 0.2;
+        innerCore.rotation.y = time * 0.3;
         const pulse = 1 + Math.sin(time * 2) * 0.05;
         innerCore.scale.setScalar(pulse);
     }
     if (coreGlow) {
-        const glowPulse = 1 + Math.sin(time * 1.5) * 0.1;
-        coreGlow.scale.setScalar(glowPulse);
-        coreGlow.material.opacity = 0.06 + Math.sin(time * 2) * 0.03;
+        coreGlow.scale.setScalar(1 + Math.sin(time * 1.5) * 0.1);
+        coreGlow.material.opacity = 0.08 + Math.sin(time * 2) * 0.04;
     }
 
-    // Vertex orbs
+    // Vertex orbs - animate rings and moons (NO FLOATING)
     const vertexOrbs = core.getObjectByName('vertexOrbs');
     if (vertexOrbs) {
         vertexOrbs.children.forEach((orbGroup, i) => {
-            // Rotate ring
-            const ring = orbGroup.getObjectByName('orbRing');
-            if (ring) {
-                ring.rotation.x = time * 2;
-                ring.rotation.y = time * 1.2;
+            // Spin rings
+            const ring1 = orbGroup.getObjectByName('ring1');
+            const ring2 = orbGroup.getObjectByName('ring2');
+            if (ring1) ring1.rotation.z = time * 3;
+            if (ring2) ring2.rotation.z = -time * 2.5;
+
+            // Orbit moon
+            const moon = orbGroup.getObjectByName('moon');
+            if (moon) {
+                const moonAngle = time * 2 + i;
+                moon.position.x = Math.cos(moonAngle) * 0.25;
+                moon.position.z = Math.sin(moonAngle) * 0.25;
             }
 
-            // Smooth scale transition
+            // Smooth scale (for hover)
             const currentScale = orbGroup.scale.x;
             const targetScale = orbGroup.userData.targetScale;
-            orbGroup.scale.setScalar(currentScale + (targetScale - currentScale) * 0.12);
+            orbGroup.scale.setScalar(currentScale + (targetScale - currentScale) * 0.15);
 
-            // Highlight active section
+            // Keep position FIXED (no floating)
+            orbGroup.position.copy(orbGroup.userData.fixedPosition);
+
+            // Highlight active
             if (activeSection && orbGroup.userData.section === activeSection) {
-                orbGroup.userData.targetScale = 1.4;
-            }
-
-            // Subtle float
-            const basePos = orbGroup.userData.basePosition;
-            if (basePos) {
-                orbGroup.position.y = basePos.y + Math.sin(time * 1.2 + i * 1.5) * 0.1;
+                orbGroup.userData.targetScale = 1.5;
             }
         });
     }
 
+    // Core expansion
+    const currentScale = core.scale.x;
+    const targetScale = core.userData.targetScale;
+    core.scale.setScalar(currentScale + (targetScale - currentScale) * 0.05);
+
     // Pulsing core light
-    const coreLight = core.children.find(c => c.type === 'PointLight' && c.color.getHex() === 0xff6600);
+    const coreLight = core.children.find(c => c.type === 'PointLight');
     if (coreLight) {
-        coreLight.intensity = 2 + Math.sin(time * 3) * 0.5;
+        coreLight.intensity = 2.5 + Math.sin(time * 3) * 0.5;
     }
+}
+
+/**
+ * Expand core when section is clicked
+ */
+export function expandCore(core, expand = true) {
+    core.userData.targetScale = expand ? 1.3 : 1;
 }

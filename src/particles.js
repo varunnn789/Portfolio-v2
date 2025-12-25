@@ -1,44 +1,40 @@
 /**
  * ============================================
- * PARTICLES - Magical Fireflies
+ * PARTICLES - Orbiting Around Core
  * ============================================
  * 
- * LEARNING: Particle Systems
- * 
- * Particles are tiny points that create atmosphere.
- * We animate them in a swirling pattern around the tree.
+ * Particles orbit tightly around the central core,
+ * not scattered across the scene.
  */
 
 import * as THREE from 'three';
 
 /**
- * Create firefly particles that orbit the tree
+ * Create particles that orbit the core
  */
-export function createParticles(count = 80) {
+export function createParticles(count = 60) {
     const particles = new THREE.Group();
     particles.name = 'particles';
 
-    // Store particle data for animation
     particles.userData.particleData = [];
 
     for (let i = 0; i < count; i++) {
-        // Random starting position in a cylinder around tree
+        // Start in tight orbit around core center
         const angle = Math.random() * Math.PI * 2;
-        const radius = 1.5 + Math.random() * 3;
-        const height = 1 + Math.random() * 6;
+        const radius = 2 + Math.random() * 4; // Orbit radius 2-6
+        const height = (Math.random() - 0.5) * 6; // Vertical spread
 
-        // Create glowing sphere
-        const size = 0.03 + Math.random() * 0.05;
-        const geo = new THREE.SphereGeometry(size, 6, 6);
+        const size = 0.02 + Math.random() * 0.04;
+        const geo = new THREE.SphereGeometry(size, 4, 4);
 
-        // Warm golden color with slight variation
-        const hue = 0.12 + Math.random() * 0.05; // Gold range
-        const color = new THREE.Color().setHSL(hue, 0.8, 0.6);
+        // Cyberpunk colors
+        const colors = [0x00ffff, 0xff00ff, 0x00ff88, 0xff6600, 0xffff00];
+        const color = colors[Math.floor(Math.random() * colors.length)];
 
         const mat = new THREE.MeshBasicMaterial({
             color: color,
             transparent: true,
-            opacity: 0.4 + Math.random() * 0.4
+            opacity: 0.3 + Math.random() * 0.4
         });
 
         const particle = new THREE.Mesh(geo, mat);
@@ -50,43 +46,40 @@ export function createParticles(count = 80) {
 
         particles.add(particle);
 
-        // Store animation data
         particles.userData.particleData.push({
             mesh: particle,
             angle: angle,
             radius: radius,
-            height: height,
-            speed: 0.2 + Math.random() * 0.3,
-            verticalSpeed: 0.5 + Math.random() * 0.5,
-            verticalOffset: Math.random() * Math.PI * 2,
-            flickerSpeed: 2 + Math.random() * 3,
-            flickerOffset: Math.random() * Math.PI * 2
+            baseHeight: height,
+            speed: 0.1 + Math.random() * 0.2, // Orbit speed
+            verticalSpeed: 0.3 + Math.random() * 0.5,
+            verticalOffset: Math.random() * Math.PI * 2
         });
     }
 
-    console.log('✨ Particles created:', count);
+    console.log('✨ Orbiting particles created:', count);
     return particles;
 }
 
 /**
- * Animate particles (call each frame)
+ * Animate particles orbiting around core
  */
-export function animateParticles(particles, time) {
+export function animateParticles(particles, time, corePosition = { x: -2, y: 4, z: 0 }) {
     if (!particles || !particles.userData.particleData) return;
 
     particles.userData.particleData.forEach(data => {
-        // Orbit around tree
-        data.angle += data.speed * 0.01;
+        // Orbit around core position
+        data.angle += data.speed * 0.015;
 
-        // Gentle vertical bobbing
-        const verticalOffset = Math.sin(time * data.verticalSpeed + data.verticalOffset) * 0.3;
+        // Gentle vertical wave
+        const verticalOffset = Math.sin(time * data.verticalSpeed + data.verticalOffset) * 0.5;
 
-        // Update position
-        data.mesh.position.x = Math.cos(data.angle) * data.radius;
-        data.mesh.position.z = Math.sin(data.angle) * data.radius;
-        data.mesh.position.y = data.height + verticalOffset;
+        // Update position relative to core
+        data.mesh.position.x = corePosition.x + Math.cos(data.angle) * data.radius;
+        data.mesh.position.z = corePosition.z + Math.sin(data.angle) * data.radius;
+        data.mesh.position.y = corePosition.y + data.baseHeight + verticalOffset;
 
-        // Flicker opacity
-        data.mesh.material.opacity = 0.3 + Math.sin(time * data.flickerSpeed + data.flickerOffset) * 0.3;
+        // Pulse opacity
+        data.mesh.material.opacity = 0.3 + Math.sin(time * 2 + data.angle) * 0.2;
     });
 }

@@ -88,10 +88,6 @@ const core = createCyberpunkCore();
 scene.add(core);
 
 const particles = createParticles(80);
-particles.children.forEach(p => {
-    const colors = [0x00ffff, 0xff00ff, 0x00ff88, 0xff6600];
-    p.material.color.setHex(colors[Math.floor(Math.random() * colors.length)]);
-});
 scene.add(particles);
 
 // ============================================
@@ -258,8 +254,9 @@ function animate() {
     // Smooth core rotation towards target
     core.rotation.y += (targetCoreRotation - core.rotation.y) * 0.02;
 
-    // Animate particles
-    animateParticles(particles, time);
+    // Animate particles around core
+    const corePos = { x: core.position.x, y: core.position.y, z: core.position.z };
+    animateParticles(particles, time, corePos);
 
     // Smooth camera movement
     camera.position.lerp(targetCameraPos, 0.025);
