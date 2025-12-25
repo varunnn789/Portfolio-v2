@@ -1,0 +1,389 @@
+/* ============================================
+   FAIRY TREE PORTFOLIO - Styles
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: #1a1a2e;
+    color: #f0f0f0;
+    overflow: hidden;
+}
+
+/* ============================================
+   CANVAS
+   ============================================ */
+
+#scene {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+/* ============================================
+   LOADING
+   ============================================ */
+
+#loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #1a1a2e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    transition: opacity 0.5s ease;
+}
+
+#loading span {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.5rem;
+    color: #d4af37;
+    letter-spacing: 0.2em;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+
+#header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 2rem 3rem;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.5rem;
+    font-weight: 300;
+    color: #f0f0f0;
+    letter-spacing: 0.15em;
+}
+
+/* ============================================
+   NAVIGATION
+   ============================================ */
+
+#nav {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.nav-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #a0a0a0;
+    padding: 0.6rem 1.2rem;
+    font-size: 0.85rem;
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 4px;
+}
+
+.nav-btn:hover {
+    background: rgba(212, 175, 55, 0.1);
+    border-color: rgba(212, 175, 55, 0.3);
+    color: #d4af37;
+}
+
+.nav-btn.active {
+    background: rgba(212, 175, 55, 0.15);
+    border-color: #d4af37;
+    color: #d4af37;
+}
+
+/* ============================================
+   CONTENT PANEL (Right Side)
+   ============================================ */
+
+#content {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 420px;
+    height: 100%;
+    background: rgba(20, 20, 35, 0.92);
+    backdrop-filter: blur(10px);
+    border-left: 1px solid rgba(212, 175, 55, 0.15);
+    padding: 6rem 2.5rem 3rem;
+    z-index: 50;
+    overflow-y: auto;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+#content.transitioning {
+    opacity: 0.7;
+    transform: translateX(10px);
+}
+
+#section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2rem;
+    font-weight: 400;
+    color: #d4af37;
+    margin-bottom: 1.5rem;
+    letter-spacing: 0.05em;
+}
+
+#section-content {
+    font-size: 0.95rem;
+    line-height: 1.8;
+    color: #c0c0c0;
+}
+
+#section-content p {
+    margin-bottom: 1rem;
+}
+
+/* ============================================
+   CONTENT ELEMENTS
+   ============================================ */
+
+.highlight {
+    color: #d4af37;
+    font-weight: 500;
+}
+
+/* Stats */
+.stats {
+    display: flex;
+    gap: 2rem;
+    margin-top: 1.5rem;
+}
+
+.stat {
+    text-align: center;
+}
+
+.stat-value {
+    display: block;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.5rem;
+    color: #d4af37;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+/* Skills */
+.skill-category {
+    margin-bottom: 1.5rem;
+}
+
+.skill-category h4 {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #f0f0f0;
+    margin-bottom: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.skill-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.skill-tag {
+    background: rgba(212, 175, 55, 0.1);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    color: #d4af37;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.skill-tag:hover {
+    background: rgba(212, 175, 55, 0.2);
+    transform: translateY(-2px);
+}
+
+/* Projects */
+.project-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 1.2rem;
+    margin-bottom: 1rem;
+    transition: all 0.3s;
+}
+
+.project-card:hover {
+    background: rgba(212, 175, 55, 0.05);
+    border-color: rgba(212, 175, 55, 0.2);
+    transform: translateX(-5px);
+}
+
+.project-card h4 {
+    font-size: 1.1rem;
+    color: #f0f0f0;
+    margin-bottom: 0.5rem;
+}
+
+.project-card p {
+    font-size: 0.9rem;
+    color: #999;
+    margin-bottom: 0.8rem;
+}
+
+.project-tags {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.project-tags span {
+    font-size: 0.75rem;
+    color: #888;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+}
+
+/* Timeline */
+.timeline {
+    position: relative;
+    padding-left: 1.5rem;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, #d4af37, transparent);
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 2rem;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -1.5rem;
+    top: 0.3rem;
+    width: 10px;
+    height: 10px;
+    background: #d4af37;
+    border-radius: 50%;
+    transform: translateX(-4px);
+}
+
+.timeline-date {
+    font-size: 0.8rem;
+    color: #d4af37;
+    margin-bottom: 0.3rem;
+}
+
+.timeline-content h4 {
+    font-size: 1rem;
+    color: #f0f0f0;
+    margin-bottom: 0.2rem;
+}
+
+.timeline-company {
+    font-size: 0.85rem;
+    color: #888;
+    margin-bottom: 0.5rem;
+}
+
+.timeline-content p {
+    font-size: 0.9rem;
+    color: #999;
+}
+
+/* Contact */
+.contact-intro {
+    font-size: 1rem;
+    color: #c0c0c0;
+    margin-bottom: 1.5rem;
+}
+
+.contact-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.contact-link {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    text-decoration: none;
+    color: #c0c0c0;
+    transition: all 0.3s;
+}
+
+.contact-link:hover {
+    background: rgba(212, 175, 55, 0.1);
+    border-color: rgba(212, 175, 55, 0.3);
+    color: #d4af37;
+    transform: translateX(-5px);
+}
+
+.contact-icon {
+    font-size: 1.5rem;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 900px) {
+    #content {
+        width: 100%;
+        height: auto;
+        max-height: 50vh;
+        top: auto;
+        bottom: 0;
+        border-left: none;
+        border-top: 1px solid rgba(212, 175, 55, 0.15);
+        padding: 2rem;
+    }
+
+    #header {
+        padding: 1rem;
+    }
+
+    .logo {
+        font-size: 1.2rem;
+    }
+
+    .nav-btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.75rem;
+    }
+}

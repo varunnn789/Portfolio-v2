@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Varun Singh - Data Scientist & Software Developer Portfolio" />
+  <title>Varun Singh | Portfolio</title>
+  <link rel="stylesheet" href="/src/styles.css" />
+</head>
+
+<body>
+  <!-- 3D Canvas -->
+  <canvas id="scene"></canvas>
+
+  <!-- Loading -->
+  <div id="loading">
+    <span>✨ Loading...</span>
+  </div>
+
+  <!-- Header with Logo and Navigation -->
+  <header id="header">
+    <div class="logo">VARUN SINGH</div>
+
+    <nav id="nav">
+      <button class="nav-btn active" data-section="about">About</button>
+      <button class="nav-btn" data-section="skills">Skills</button>
+      <button class="nav-btn" data-section="projects">Projects</button>
+      <button class="nav-btn" data-section="experience">Experience</button>
+      <button class="nav-btn" data-section="contact">Contact</button>
+    </nav>
+  </header>
+
+  <!-- Content Panel (Right Side) -->
+  <aside id="content">
+    <h2 id="section-title">About Me</h2>
+    <div id="section-content">
+      <!-- Content injected by JS -->
+    </div>
+  </aside>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>

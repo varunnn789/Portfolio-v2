@@ -1,0 +1,763 @@
+/*
+ * ============================================
+ * DESIGN SYSTEM - Core Variables & Base Styles
+ * ============================================
+ * 
+ * LEARNING: CSS Custom Properties (Variables)
+ * 
+ * These act like variables in programming. Define once, use everywhere.
+ * If we want to change the primary color, we change it in ONE place.
+ * 
+ * Syntax: --variable-name: value;
+ * Usage:  color: var(--variable-name);
+ */
+
+:root {
+  /* === COLOR PALETTE === */
+  /* Primary: The main accent color - terminal green with sci-fi twist */
+  --color-primary: #00ff88;
+  --color-primary-dim: #00ff8833;
+  /* 33 = 20% opacity in hex */
+  --color-primary-glow: #00ff8866;
+
+  /* Secondary: Complementary accent - cyan/blue */
+  --color-secondary: #00d4ff;
+  --color-secondary-dim: #00d4ff33;
+
+  /* Accent: For highlights and special elements - warm contrast */
+  --color-accent: #ff6b35;
+
+  /* Backgrounds: Dark, layered for depth */
+  --color-bg-deep: #0a0a0f;
+  /* Deepest background */
+  --color-bg: #0d0d14;
+  /* Main background */
+  --color-bg-elevated: #14141f;
+  /* Cards, panels */
+  --color-bg-overlay: rgba(10, 10, 15, 0.9);
+
+  /* Text colors */
+  --color-text: #e0e0e0;
+  --color-text-dim: #808080;
+  --color-text-bright: #ffffff;
+
+  /* === TYPOGRAPHY === */
+  /* We'll use a monospace font for that terminal/code feel */
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  --font-display: 'Orbitron', 'JetBrains Mono', monospace;
+  /* For headings */
+
+  /* Font sizes using a modular scale (1.25 ratio) */
+  --text-xs: 0.64rem;
+  /* 10px */
+  --text-sm: 0.8rem;
+  /* 13px */
+  --text-base: 1rem;
+  /* 16px */
+  --text-lg: 1.25rem;
+  /* 20px */
+  --text-xl: 1.563rem;
+  /* 25px */
+  --text-2xl: 1.953rem;
+  /* 31px */
+  --text-3xl: 2.441rem;
+  /* 39px */
+
+  /* === SPACING === */
+  /* Using 8px base unit - common in design systems */
+  --space-1: 0.25rem;
+  /* 4px */
+  --space-2: 0.5rem;
+  /* 8px */
+  --space-3: 1rem;
+  /* 16px */
+  --space-4: 1.5rem;
+  /* 24px */
+  --space-5: 2rem;
+  /* 32px */
+  --space-6: 3rem;
+  /* 48px */
+
+  /* === EFFECTS === */
+  --border-radius: 4px;
+  --transition-fast: 150ms ease;
+  --transition-medium: 300ms ease;
+  --transition-slow: 500ms ease;
+
+  /* Glow effects */
+  --glow-primary: 0 0 20px var(--color-primary-dim),
+    0 0 40px var(--color-primary-dim);
+  --glow-text: 0 0 10px currentColor;
+}
+
+/*
+ * === CSS RESET ===
+ * Remove browser default styles for consistency across browsers.
+ * This is a minimal reset - just what we need.
+ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  /* No scrollbars - we control everything in 3D */
+}
+
+body {
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  color: var(--color-text);
+  background-color: var(--color-bg-deep);
+  line-height: 1.6;
+
+  /* Prevent text selection during interactions */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/*
+ * === THE CANVAS ===
+ * This is where Three.js renders. It fills the entire viewport.
+ */
+#scene {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  /* Behind everything */
+}
+
+/*
+ * === THE HUD (Heads-Up Display) ===
+ * All 2D UI elements sit in this container, above the 3D scene.
+ */
+#hud {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  /* Above the canvas */
+  pointer-events: none;
+  /* Let clicks pass through to 3D scene by default */
+}
+
+/* But make interactive elements clickable */
+#hud nav,
+#hud button,
+#hud .clickable,
+#hud #info-panel {
+  pointer-events: auto;
+}
+
+/*
+ * === LOADING SCREEN ===
+ */
+#loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-deep);
+  z-index: 100;
+  transition: opacity var(--transition-slow);
+}
+
+#loading.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loading-text {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  color: var(--color-primary);
+  margin-bottom: var(--space-4);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.loading-bar {
+  width: 200px;
+  height: 4px;
+  background: var(--color-bg-elevated);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+.loading-progress {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+  transition: width var(--transition-medium);
+}
+
+/*
+ * === NAVIGATION ===
+ */
+#main-nav {
+  position: absolute;
+  top: var(--space-4);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-bg-overlay);
+  border: 1px solid var(--color-primary-dim);
+  border-radius: var(--border-radius);
+  opacity: 0;
+  transition: opacity var(--transition-medium);
+}
+
+#main-nav.visible {
+  opacity: 1;
+}
+
+.nav-item {
+  font-size: var(--text-sm);
+  color: var(--color-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+  transition: color var(--transition-fast), text-shadow var(--transition-fast);
+}
+
+.nav-item:hover,
+.nav-item.active {
+  color: var(--color-primary);
+  text-shadow: var(--glow-text);
+}
+
+/*
+ * === INFO PANEL ===
+ * Shows detailed information when selecting sections
+ */
+#info-panel {
+  position: absolute;
+  right: var(--space-4);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 350px;
+  max-height: 70vh;
+  background: var(--color-bg-overlay);
+  border: 1px solid var(--color-primary-dim);
+  border-radius: var(--border-radius);
+  padding: var(--space-4);
+  opacity: 0;
+  transition: opacity var(--transition-medium), transform var(--transition-medium);
+}
+
+#info-panel.visible {
+  opacity: 1;
+}
+
+#panel-title {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  color: var(--color-primary);
+  margin-bottom: var(--space-3);
+  text-transform: uppercase;
+}
+
+#panel-content {
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  line-height: 1.8;
+}
+
+/*
+ * === ANIMATIONS ===
+ * 
+ * LEARNING: CSS Keyframe Animations
+ * 
+ * @keyframes defines an animation sequence.
+ * animation property applies it to an element.
+ */
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes glow {
+
+  0%,
+  100% {
+    box-shadow: var(--glow-primary);
+  }
+
+  50% {
+    box-shadow: 0 0 30px var(--color-primary-dim),
+      0 0 60px var(--color-primary-dim);
+  }
+}
+
+/*
+ * === SCANLINE EFFECT ===
+ * Creates that retro CRT monitor look
+ */
+.scanlines::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(0deg,
+      rgba(0, 0, 0, 0.1) 0px,
+      rgba(0, 0, 0, 0.1) 1px,
+      transparent 1px,
+      transparent 2px);
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/*
+ * === UTILITY CLASSES ===
+ */
+.text-glow {
+  text-shadow: var(--glow-text);
+}
+
+.hidden {
+  display: none !important;
+}
+
+/*
+ * ============================================
+ * INFO PANEL CONTENT STYLES
+ * ============================================
+ * 
+ * These styles are for content injected via JavaScript
+ * from our portfolio.js data file.
+ */
+
+/* Make panel scrollable */
+#info-panel {
+  overflow-y: auto;
+}
+
+#info-panel::-webkit-scrollbar {
+  width: 4px;
+}
+
+#info-panel::-webkit-scrollbar-track {
+  background: var(--color-bg-elevated);
+}
+
+#info-panel::-webkit-scrollbar-thumb {
+  background: var(--color-primary-dim);
+  border-radius: 2px;
+}
+
+/* Panel slide-in animation */
+#info-panel {
+  transform: translateY(-50%) translateX(20px);
+}
+
+#info-panel.visible {
+  transform: translateY(-50%) translateX(0);
+}
+
+/* Paragraphs */
+#panel-content p {
+  margin-bottom: var(--space-3);
+}
+
+/* Highlighted text */
+#panel-content .highlight {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* Stats display */
+#panel-content .stats {
+  display: flex;
+  gap: var(--space-4);
+  margin: var(--space-4) 0;
+}
+
+#panel-content .stat {
+  text-align: center;
+}
+
+#panel-content .stat-value {
+  display: block;
+  font-size: var(--text-2xl);
+  color: var(--color-primary);
+  font-weight: bold;
+  text-shadow: var(--glow-text);
+}
+
+#panel-content .stat-label {
+  font-size: var(--text-xs);
+  color: var(--color-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Skill categories */
+#panel-content .skill-category {
+  margin-bottom: var(--space-4);
+}
+
+#panel-content .skill-category h3 {
+  font-size: var(--text-sm);
+  color: var(--color-secondary);
+  margin-bottom: var(--space-2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+#panel-content .skill-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+#panel-content .skill-tag {
+  background: var(--color-primary-dim);
+  color: var(--color-primary);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--border-radius);
+  font-size: var(--text-xs);
+  border: 1px solid var(--color-primary-dim);
+  transition: all var(--transition-fast);
+}
+
+#panel-content .skill-tag:hover {
+  background: var(--color-primary);
+  color: var(--color-bg-deep);
+  transform: scale(1.05);
+}
+
+/* Project cards */
+#panel-content .project-card {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-primary-dim);
+  border-radius: var(--border-radius);
+  padding: var(--space-3);
+  margin-bottom: var(--space-3);
+  transition: all var(--transition-fast);
+}
+
+#panel-content .project-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--glow-primary);
+}
+
+#panel-content .project-card h3 {
+  font-size: var(--text-base);
+  color: var(--color-text-bright);
+  margin-bottom: var(--space-2);
+}
+
+#panel-content .project-card p {
+  font-size: var(--text-sm);
+  color: var(--color-text-dim);
+  margin-bottom: var(--space-2);
+}
+
+#panel-content .project-tags {
+  display: flex;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+
+#panel-content .project-tags span {
+  background: var(--color-secondary-dim);
+  color: var(--color-secondary);
+  padding: 2px 8px;
+  border-radius: 2px;
+  font-size: var(--text-xs);
+}
+
+/* Timeline */
+#panel-content .timeline {
+  position: relative;
+  padding-left: var(--space-4);
+}
+
+#panel-content .timeline::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom,
+      var(--color-primary),
+      var(--color-secondary));
+}
+
+#panel-content .timeline-item {
+  position: relative;
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-bg-elevated);
+}
+
+#panel-content .timeline-item:last-child {
+  border-bottom: none;
+}
+
+#panel-content .timeline-item::before {
+  content: '';
+  position: absolute;
+  left: calc(-1 * var(--space-4) - 5px);
+  top: 4px;
+  width: 12px;
+  height: 12px;
+  background: var(--color-primary);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--color-primary);
+}
+
+#panel-content .timeline-date {
+  font-size: var(--text-xs);
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: var(--space-1);
+}
+
+#panel-content .timeline-title {
+  font-size: var(--text-base);
+  color: var(--color-text-bright);
+  font-weight: 600;
+}
+
+#panel-content .timeline-company {
+  font-size: var(--text-sm);
+  color: var(--color-secondary);
+  margin-bottom: var(--space-2);
+}
+
+/* Contact links */
+#panel-content .contact-links {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+#panel-content .contact-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text);
+  text-decoration: none;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-primary-dim);
+  border-radius: var(--border-radius);
+  transition: all var(--transition-fast);
+}
+
+#panel-content .contact-link:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-dim);
+  color: var(--color-primary);
+}
+
+#panel-content .contact-link .icon {
+  font-size: var(--text-lg);
+}
+
+/*
+ * ============================================
+ * NAV ITEM ANIMATIONS
+ * ============================================
+ */
+.nav-item {
+  position: relative;
+}
+
+.nav-item::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: var(--color-primary);
+  transition: all var(--transition-fast);
+  transform: translateX(-50%);
+}
+
+.nav-item:hover::after,
+.nav-item.active::after {
+  width: 100%;
+}
+
+/*
+ * ============================================
+ * KEYBOARD HINT INDICATOR
+ * ============================================
+ */
+.keyboard-hint {
+  position: fixed;
+  bottom: var(--space-4);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: var(--space-2);
+  opacity: 0.5;
+  transition: opacity var(--transition-medium);
+}
+
+.keyboard-hint:hover {
+  opacity: 1;
+}
+
+.key {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-text-dim);
+  border-radius: var(--border-radius);
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-text-dim);
+}
+
+/*
+ * ============================================
+ * CONTROL BUTTONS (Mute, Home)
+ * ============================================
+ */
+#control-buttons {
+  position: fixed;
+  top: var(--space-4);
+  right: var(--space-4);
+  display: flex;
+  gap: var(--space-2);
+  z-index: 100;
+}
+
+#control-buttons button {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--color-primary-dim);
+  border-radius: var(--border-radius);
+  background: var(--color-bg-overlay);
+  color: var(--color-text);
+  font-size: var(--text-lg);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+#control-buttons button:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-dim);
+}
+
+/*
+ * ============================================
+ * GAME HUD (Collection counter)
+ * ============================================
+ */
+#game-hud {
+  position: fixed;
+  top: var(--space-4);
+  left: var(--space-4);
+  z-index: 100;
+}
+
+#collection-display {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-bg-overlay);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--border-radius);
+}
+
+#collection-display .label {
+  font-size: var(--text-xs);
+  color: var(--color-text-dim);
+  letter-spacing: 0.1em;
+  margin-bottom: var(--space-1);
+}
+
+#collection-counter {
+  font-size: var(--text-2xl);
+  font-weight: bold;
+  color: var(--color-primary);
+  font-family: var(--font-mono);
+}
+
+/*
+ * ============================================
+ * CONTROLS HINT (WASD instructions)
+ * ============================================
+ */
+#controls-hint {
+  position: fixed;
+  bottom: var(--space-4);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-bg-overlay);
+  border: 1px solid var(--color-primary-dim);
+  border-radius: var(--border-radius);
+  font-size: var(--text-xs);
+  color: var(--color-text-dim);
+  opacity: 0.7;
+  transition: opacity var(--transition-medium);
+}
+
+#controls-hint:hover {
+  opacity: 1;
+}
+
+#controls-hint span {
+  background: var(--color-bg-elevated);
+  padding: 2px 8px;
+  border-radius: 3px;
+  color: var(--color-primary);
+  font-weight: bold;
+}
+
+/*
+ * ============================================
+ * SPECIAL NAV ITEM (Playground)
+ * ============================================
+ */
+.nav-item-special {
+  color: var(--color-accent) !important;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--border-radius);
+  padding: var(--space-1) var(--space-2) !important;
+}
+
+.nav-item-special:hover {
+  background: var(--color-accent);
+  color: var(--color-bg-deep) !important;
+}
