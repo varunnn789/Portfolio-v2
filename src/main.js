@@ -1,19 +1,19 @@
 /**
  * ============================================
- * MAIN - Fairy Tree Portfolio
+ * MAIN - Cyberpunk Portfolio
  * ============================================
  * 
  * LEARNING: Scene Composition
  * 
- * This file brings everything together:
- * 1. Scene setup (camera, lights, renderer)
- * 2. Tree and particles
- * 3. Navigation and section switching
- * 4. Animations
+ * Dark cyberpunk aesthetic with:
+ * - Central rotating 3D structure
+ * - Floating particles
+ * - Polished content panel on right
+ * - Section navigation with camera movement
  */
 
 import * as THREE from 'three';
-import { createFairyTree, animateTree } from './tree.js';
+import { createCyberpunkCore, animateCyberpunkCore } from './cyberpunk.js';
 import { createParticles, animateParticles } from './particles.js';
 import { sections } from './data.js';
 
@@ -24,9 +24,9 @@ import { sections } from './data.js';
 const canvas = document.getElementById('scene');
 const scene = new THREE.Scene();
 
-// Twilight gradient background
-scene.background = new THREE.Color(0x1a1a2e);
-scene.fog = new THREE.FogExp2(0x1a1a2e, 0.04);
+// Dark cyberpunk background
+scene.background = new THREE.Color(0x0a0a0f);
+scene.fog = new THREE.FogExp2(0x0a0a0f, 0.03);
 
 const camera = new THREE.PerspectiveCamera(
     60,
@@ -34,7 +34,7 @@ const camera = new THREE.PerspectiveCamera(
     0.1,
     100
 );
-camera.position.set(0, 4, 10);
+camera.position.set(0, 4, 12);
 camera.lookAt(0, 4, 0);
 
 const renderer = new THREE.WebGLRenderer({
@@ -43,59 +43,61 @@ const renderer = new THREE.WebGLRenderer({
 });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.shadowMap.enabled = true;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
 
 // ============================================
 // LIGHTING
 // ============================================
 
-// Ambient - soft blue twilight
-const ambient = new THREE.AmbientLight(0x4a5568, 0.4);
+// Dim ambient
+const ambient = new THREE.AmbientLight(0x222233, 0.3);
 scene.add(ambient);
 
-// Moon light from above/behind
-const moonLight = new THREE.DirectionalLight(0xc4d4e0, 0.6);
-moonLight.position.set(-5, 15, -5);
-scene.add(moonLight);
+// Key light - cool blue
+const keyLight = new THREE.DirectionalLight(0x4488ff, 0.4);
+keyLight.position.set(5, 10, 5);
+scene.add(keyLight);
 
-// Warm fill from front
-const warmFill = new THREE.DirectionalLight(0xffecd2, 0.3);
-warmFill.position.set(5, 5, 10);
-scene.add(warmFill);
+// Rim light - magenta
+const rimLight = new THREE.DirectionalLight(0xff00ff, 0.3);
+rimLight.position.set(-5, 5, -5);
+scene.add(rimLight);
 
 // ============================================
-// GROUND
+// GROUND - Subtle grid
 // ============================================
 
-const groundGeo = new THREE.CircleGeometry(15, 64);
+const gridHelper = new THREE.GridHelper(30, 30, 0x222244, 0x111122);
+gridHelper.material.opacity = 0.3;
+gridHelper.material.transparent = true;
+scene.add(gridHelper);
+
+// Ground plane for fog effect
+const groundGeo = new THREE.PlaneGeometry(50, 50);
 const groundMat = new THREE.MeshStandardMaterial({
-    color: 0x2d3436,
+    color: 0x050508,
     roughness: 1
 });
 const ground = new THREE.Mesh(groundGeo, groundMat);
 ground.rotation.x = -Math.PI / 2;
-ground.receiveShadow = true;
+ground.position.y = -0.01;
 scene.add(ground);
 
-// Grass ring around tree
-const grassGeo = new THREE.RingGeometry(0.8, 3, 32);
-const grassMat = new THREE.MeshStandardMaterial({
-    color: 0x4a5d4a,
-    roughness: 0.9
+// ============================================
+// CYBERPUNK CORE & PARTICLES
+// ============================================
+
+const core = createCyberpunkCore();
+scene.add(core);
+
+const particles = createParticles(100);
+// Make particles more cyberpunk colored
+particles.children.forEach(p => {
+    const colors = [0x00ffff, 0xff00ff, 0x00ff88, 0xff6600];
+    p.material.color.setHex(colors[Math.floor(Math.random() * colors.length)]);
+    p.material.opacity = 0.3 + Math.random() * 0.3;
 });
-const grass = new THREE.Mesh(grassGeo, grassMat);
-grass.rotation.x = -Math.PI / 2;
-grass.position.y = 0.01;
-scene.add(grass);
-
-// ============================================
-// TREE & PARTICLES
-// ============================================
-
-const tree = createFairyTree();
-scene.add(tree);
-
-const particles = createParticles(60);
 scene.add(particles);
 
 // ============================================
@@ -103,11 +105,11 @@ scene.add(particles);
 // ============================================
 
 const cameraPositions = {
-    about: { pos: new THREE.Vector3(0, 3, 9), lookAt: new THREE.Vector3(0, 3, 0) },
-    skills: { pos: new THREE.Vector3(4, 5, 7), lookAt: new THREE.Vector3(0, 4.5, 0) },
-    projects: { pos: new THREE.Vector3(-4, 4, 8), lookAt: new THREE.Vector3(0, 4, 0) },
-    experience: { pos: new THREE.Vector3(0, 2, 8), lookAt: new THREE.Vector3(0, 2.5, 0) },
-    contact: { pos: new THREE.Vector3(0, 5, 10), lookAt: new THREE.Vector3(0, 4, 0) }
+    about: { pos: new THREE.Vector3(0, 4, 12), lookAt: new THREE.Vector3(0, 4, 0) },
+    skills: { pos: new THREE.Vector3(6, 5, 10), lookAt: new THREE.Vector3(0, 4, 0) },
+    projects: { pos: new THREE.Vector3(-6, 4, 10), lookAt: new THREE.Vector3(0, 4, 0) },
+    experience: { pos: new THREE.Vector3(0, 2, 10), lookAt: new THREE.Vector3(0, 3, 0) },
+    contact: { pos: new THREE.Vector3(0, 6, 14), lookAt: new THREE.Vector3(0, 4, 0) }
 };
 
 let currentSection = 'about';
@@ -172,8 +174,8 @@ function animate() {
 
     const time = clock.getElapsedTime();
 
-    // Animate tree
-    animateTree(tree, time);
+    // Animate cyberpunk core
+    animateCyberpunkCore(core, time);
 
     // Animate particles
     animateParticles(particles, time);
@@ -211,4 +213,4 @@ setTimeout(() => {
 
 animate();
 
-console.log('🌟 Fairy Tree Portfolio loaded');
+console.log('🔮 Cyberpunk Portfolio loaded');
