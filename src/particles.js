@@ -69,3 +69,118 @@ export function animateParticles(particles, time, corePosition = { x: 0, y: 0, z
         data.mesh.material.opacity = 0.2 + Math.sin(time * 1.5 + data.angle) * 0.15;
     });
 }
+
+/**
+ * ============================================
+ * ENERGY FLOW - Particles flowing from core to orbs
+ * ============================================
+ */
+
+export function createEnergyFlow(orbPositions, count = 25) {
+    const energyFlow = new THREE.Group();
+    energyFlow.name = 'energyFlow';
+
+    const colors = [0x00ffff, 0xff00ff, 0x00ff88, 0xff6600, 0xffff00];
+
+    energyFlow.userData = {
+        flowData: [],
+        focusedOrbIndex: -1 // -1 means no focus, particles go to all orbs
+    };
+
+    for (let i = 0; i < count; i++) {
+        const size = 0.04 + Math.random() * 0.06;
+        const geo = new THREE.SphereGeometry(size, 6, 6);
+
+        const orbIndex = i % orbPositions.length;
+        const color = colors[orbIndex];
+
+        const mat = new THREE.MeshBasicMaterial({
+            color: color,
+            transparent: true,
+            opacity: 0.6
+        });
+
+        const particle = new THREE.Mesh(geo, mat);
+        particle.name = `energyParticle_${i}`;
+        energyFlow.add(particle);
+
+        // Flow data for each particle
+        energyFlow.userData.flowData.push({
+            mesh: particle,
+            orbIndex: orbIndex,
+            progress: Math.random(), // 0 = at core, 1 = at orb
+            speed: 0.3 + Math.random() * 0.4,
+            curve: Math.random() * 0.5 + 0.3, // How much the path curves
+            color: color
+        });
+    }
+
+    console.log('⚡ Energy flow particles created:', count);
+    return energyFlow;
+}
+
+export function animateEnergyFlow(energyFlow, orbPositions, time, focusedOrbIndex = -1) {
+    if (!energyFlow || !energyFlow.userData.flowData) return;
+    if (orbPositions.length === 0) return;
+
+    energyFlow.userData.focusedOrbIndex = focusedOrbIndex;
+
+    energyFlow.userData.flowData.forEach((data, i) => {
+        // Advance progress
+        data.progress += data.speed * 0.008;
+
+        // Loop back to core when reaching orb
+        if (data.progress >= 1) {
+            data.progress = 0;
+
+            // If focused, converge all particles to the focused orb
+            if (focusedOrbIndex >= 0) {
+                data.orbIndex = focusedOrbIndex;
+            } else {
+                // Otherwise, pick a random orb
+                data.orbIndex = Math.floor(Math.random() * orbPositions.length);
+            }
+        }
+
+        const targetIndex = data.orbIndex;
+        const targetPos = orbPositions[targetIndex] || { x: 6, y: 0, z: 0 };
+
+        // Ease-in-out progress for smoother movement
+        const t = data.progress;
+        const easedT = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+        // Create curved path from core (0,0,0) to orb
+        // Use a bezier-like curve with a control point offset
+        const controlPointOffset = data.curve * 3;
+
+        // Perpendicular direction for curve
+        const perpX = -targetPos.z;
+        const perpZ = targetPos.x;
+        const perpLen = Math.sqrt(perpX * perpX + perpZ * perpZ) || 1;
+        const normPerpX = (perpX / perpLen) * controlPointOffset;
+        const normPerpZ = (perpZ / perpLen) * controlPointOffset;
+
+        // Quadratic bezier interpolation
+        const oneMinusT = 1 - easedT;
+        const midX = normPerpX + targetPos.x * 0.5;
+        const midY = data.curve * 2; // Lift in the middle
+        const midZ = normPerpZ + targetPos.z * 0.5;
+
+        // Position = (1-t)²*P0 + 2*(1-t)*t*P1 + t²*P2
+        const x = oneMinusT * oneMinusT * 0 + 2 * oneMinusT * easedT * midX + easedT * easedT * targetPos.x;
+        const y = oneMinusT * oneMinusT * 0 + 2 * oneMinusT * easedT * midY + easedT * easedT * targetPos.y;
+        const z = oneMinusT * oneMinusT * 0 + 2 * oneMinusT * easedT * midZ + easedT * easedT * targetPos.z;
+
+        data.mesh.position.set(x, y, z);
+
+        // Fade in at start, out at end
+        let opacity = 0.7;
+        if (t < 0.1) opacity = t * 7;
+        if (t > 0.9) opacity = (1 - t) * 7;
+        data.mesh.material.opacity = opacity;
+
+        // Pulse size
+        const pulse = 1 + Math.sin(time * 5 + i) * 0.2;
+        data.mesh.scale.setScalar(pulse);
+    });
+}

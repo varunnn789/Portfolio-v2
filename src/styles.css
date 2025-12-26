@@ -193,10 +193,78 @@ body {
     font-size: 0.7rem;
     font-weight: 600;
     letter-spacing: 0.15em;
-    text-shadow: 0 0 15px currentColor, 0 2px 10px rgba(0, 0, 0, 0.8);
+    text-shadow: 0 0 15px currentColor, 0 0 30px currentColor, 0 2px 10px rgba(0, 0, 0, 0.8);
     transform: translateX(-50%);
     white-space: nowrap;
     pointer-events: none;
+
+    /* Holographic glow base */
+    padding: 0.3rem 0.6rem;
+    background: linear-gradient(180deg,
+            transparent 0%,
+            rgba(0, 255, 255, 0.03) 50%,
+            transparent 100%);
+
+    /* Scanline overlay effect */
+    background-image:
+        repeating-linear-gradient(0deg,
+            transparent 0px,
+            rgba(255, 255, 255, 0.02) 1px,
+            transparent 2px,
+            transparent 3px);
+
+    /* Hologram flicker animation */
+    animation: hologram-flicker 4s infinite;
+}
+
+/* Holographic flicker keyframes */
+@keyframes hologram-flicker {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+
+    2% {
+        opacity: 0.85;
+    }
+
+    4% {
+        opacity: 1;
+    }
+
+    8% {
+        opacity: 0.9;
+        transform: translateX(-50%) translateY(0.5px);
+    }
+
+    10% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+
+    92% {
+        opacity: 0.7;
+        transform: translateX(-50%) translateY(-0.5px);
+    }
+
+    93% {
+        opacity: 0.85;
+    }
+
+    94% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+
+    97% {
+        opacity: 0.9;
+    }
+
+    99% {
+        opacity: 1;
+    }
 }
 
 /* ============================================

@@ -68,7 +68,10 @@ export function createCyberpunkCore() {
         currentScale: 1,
         targetScale: 1,
         isExpanded: false,
-        focusedOrb: null
+        focusedOrb: null,
+        // Ring speed burst
+        ringSpeedMultiplier: 1,
+        targetRingSpeed: 1
     };
 
     // ============================================
@@ -99,6 +102,36 @@ export function createCyberpunkCore() {
     const glow = new THREE.Mesh(glowGeo, glowMat);
     glow.name = 'coreGlow';
     group.add(glow);
+
+    // ============================================
+    // ENERGY PULSE RINGS (for expansion effect)
+    // ============================================
+
+    const pulseRings = new THREE.Group();
+    pulseRings.name = 'pulseRings';
+
+    // Create pool of 3 pulse rings (reusable)
+    for (let i = 0; i < 3; i++) {
+        const pulseGeo = new THREE.TorusGeometry(1, 0.08, 8, 64);
+        const pulseMat = new THREE.MeshBasicMaterial({
+            color: 0x00ffff,
+            transparent: true,
+            opacity: 0,
+            side: THREE.DoubleSide
+        });
+        const pulseRing = new THREE.Mesh(pulseGeo, pulseMat);
+        pulseRing.rotation.x = Math.PI / 2;
+        pulseRing.name = `pulseRing_${i}`;
+        pulseRing.userData = {
+            active: false,
+            startTime: 0,
+            duration: 1.5, // seconds
+            color: 0x00ffff
+        };
+        pulseRings.add(pulseRing);
+    }
+
+    group.add(pulseRings);
 
     // ============================================
     // ONLY 2 ORBITAL RINGS
@@ -169,12 +202,12 @@ export function createCyberpunkCore() {
         const orbGroup = new THREE.Group();
         orbGroup.name = `orb_${section}`;
 
-        // Planet sphere
-        const orbGeo = new THREE.SphereGeometry(0.35, 16, 16);
+        // Planet sphere - LARGER for visibility
+        const orbGeo = new THREE.SphereGeometry(0.6, 16, 16);
         const orbMat = new THREE.MeshStandardMaterial({
             color: SECTION_COLORS[section],
             emissive: SECTION_COLORS[section],
-            emissiveIntensity: 0.9,
+            emissiveIntensity: 1.2,  // Brighter glow
             metalness: 0.3,
             roughness: 0.3
         });
@@ -182,28 +215,28 @@ export function createCyberpunkCore() {
         orb.name = 'sphere';
         orbGroup.add(orb);
 
-        // Ring
-        const ringGeo = new THREE.TorusGeometry(0.55, 0.02, 8, 48);
+        // Ring - LARGER to match
+        const ringGeo = new THREE.TorusGeometry(0.9, 0.03, 8, 48);
         const ringMat = new THREE.MeshBasicMaterial({
             color: SECTION_COLORS[section],
             transparent: true,
-            opacity: 0.6
+            opacity: 0.7
         });
         const ring = new THREE.Mesh(ringGeo, ringMat);
         ring.rotation.x = Math.PI / 2.5;
         ring.name = 'ring';
         orbGroup.add(ring);
 
-        // Moon
-        const moonGeo = new THREE.SphereGeometry(0.06, 6, 6);
+        // Moon - slightly larger
+        const moonGeo = new THREE.SphereGeometry(0.1, 6, 6);
         const moonMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
         const moon = new THREE.Mesh(moonGeo, moonMat);
-        moon.position.set(0.55, 0, 0);
+        moon.position.set(0.9, 0, 0);
         moon.name = 'moon';
         orbGroup.add(moon);
 
-        // Light
-        const light = new THREE.PointLight(SECTION_COLORS[section], 0.5, 5);
+        // Light - brighter
+        const light = new THREE.PointLight(SECTION_COLORS[section], 1.0, 8);
         orbGroup.add(light);
 
         orbGroup.position.copy(orbPositions[i]);
@@ -276,25 +309,59 @@ export function highlightOrb(orb, highlight = true) {
 /**
  * EXPAND the entire structure and focus on an orb
  * Returns the world position of the clicked orb for camera targeting
+ * Also applies spotlight effect - dims other orbs, brightens focused one
  */
-export function expandToOrb(core, orb) {
+export function expandToOrb(core, orb, time = performance.now() / 1000) {
     if (!core || !orb) return null;
 
     core.userData.isExpanded = true;
     core.userData.targetScale = 3; // Expand 3x to fill screen
     core.userData.focusedOrb = orb;
+    core.userData.targetRingSpeed = 5; // Speed burst!
+
+    // SPOTLIGHT EFFECT: Dim all orbs except the focused one
+    const vertexOrbs = core.getObjectByName('vertexOrbs');
+    if (vertexOrbs) {
+        vertexOrbs.children.forEach(orbGroup => {
+            const isFocused = orbGroup === orb;
+
+            orbGroup.children.forEach(child => {
+                if (child.name === 'sphere') {
+                    // Focused orb glows bright, others dim
+                    child.material.emissiveIntensity = isFocused ? 2.0 : 0.2;
+                    child.material.opacity = isFocused ? 1 : 0.3;
+                }
+                if (child.name === 'ring') {
+                    child.material.opacity = isFocused ? 1 : 0.15;
+                }
+                if (child.type === 'PointLight') {
+                    child.intensity = isFocused ? 2 : 0.1;
+                }
+                if (child.name === 'moon') {
+                    child.visible = isFocused;
+                }
+            });
+
+            // Mark for animation
+            orbGroup.userData.isFocused = isFocused;
+        });
+    }
+
+    // TRIGGER ENERGY PULSE
+    triggerEnergyPulse(core, SECTION_COLORS[orb.userData.section] || 0x00ffff, time);
 
     // Get the orb's position in world space
     const worldPos = new THREE.Vector3();
     orb.getWorldPosition(worldPos);
 
-    console.log('🎯 Expanding to orb:', orb.userData.section, 'at', worldPos);
+    console.log('🎯 Expanding to orb:', orb.userData.section, 'with spotlight + pulse');
 
     return worldPos;
 }
 
 /**
  * Collapse back to normal view
+ * Resets all orbs to normal state
  */
 export function collapseCore(core) {
     if (!core) return;
@@ -302,8 +369,33 @@ export function collapseCore(core) {
     core.userData.isExpanded = false;
     core.userData.targetScale = 1;
     core.userData.focusedOrb = null;
+    core.userData.targetRingSpeed = 1; // Reset ring speed
 
-    console.log('📦 Collapsing core');
+    // RESET SPOTLIGHT: Restore all orbs to normal
+    const vertexOrbs = core.getObjectByName('vertexOrbs');
+    if (vertexOrbs) {
+        vertexOrbs.children.forEach(orbGroup => {
+            orbGroup.children.forEach(child => {
+                if (child.name === 'sphere') {
+                    child.material.emissiveIntensity = 0.9;
+                    child.material.opacity = 1;
+                }
+                if (child.name === 'ring') {
+                    child.material.opacity = 0.6;
+                }
+                if (child.type === 'PointLight') {
+                    child.intensity = 0.5;
+                }
+                if (child.name === 'moon') {
+                    child.visible = true;
+                }
+            });
+
+            orbGroup.userData.isFocused = false;
+        });
+    }
+
+    console.log('📦 Collapsing core, spotlight off');
 }
 
 /**
@@ -323,14 +415,20 @@ export function animateCyberpunkCore(core, time) {
     core.scale.setScalar(newScale);
 
     // ============================================
-    // Rotate orbital rings
+    // Rotate orbital rings - with speed burst
     // ============================================
+
+    // Smooth speed multiplier transition
+    const currentSpeed = core.userData.ringSpeedMultiplier || 1;
+    const targetSpeed = core.userData.targetRingSpeed || 1;
+    const newSpeed = currentSpeed + (targetSpeed - currentSpeed) * 0.03;
+    core.userData.ringSpeedMultiplier = newSpeed;
 
     const ring1 = core.getObjectByName('orbitalRing1');
     const ring2 = core.getObjectByName('orbitalRing2');
 
-    if (ring1) ring1.rotation.z = time * 0.1;
-    if (ring2) ring2.rotation.z = -time * 0.08;
+    if (ring1) ring1.rotation.z = time * 0.1 * newSpeed;
+    if (ring2) ring2.rotation.z = -time * 0.08 * newSpeed;
 
     // Rotate inner shell slowly
     const shell2 = core.getObjectByName('shell2');
@@ -375,5 +473,58 @@ export function animateCyberpunkCore(core, time) {
                 moon.position.z = Math.sin(moonAngle) * 0.55;
             }
         });
+    }
+
+    // ============================================
+    // ENERGY PULSE RINGS ANIMATION
+    // ============================================
+
+    const pulseRings = core.getObjectByName('pulseRings');
+    if (pulseRings) {
+        pulseRings.children.forEach(ring => {
+            if (!ring.userData.active) return;
+
+            const elapsed = time - ring.userData.startTime;
+            const progress = elapsed / ring.userData.duration;
+
+            if (progress >= 1) {
+                // Reset ring
+                ring.userData.active = false;
+                ring.material.opacity = 0;
+                ring.scale.setScalar(1);
+            } else {
+                // Ease-out: fast start, slow end
+                const eased = 1 - Math.pow(1 - progress, 3);
+
+                // Expand from 1 to 12
+                const scale = 1 + eased * 11;
+                ring.scale.setScalar(scale);
+
+                // Fade out
+                ring.material.opacity = (1 - progress) * 0.8;
+            }
+        });
+    }
+}
+
+// Global time tracker for pulse triggering
+let globalAnimTime = 0;
+
+/**
+ * Trigger an energy pulse from the core
+ */
+function triggerEnergyPulse(core, color, time) {
+    const pulseRings = core.getObjectByName('pulseRings');
+    if (!pulseRings) return;
+
+    // Find an inactive ring
+    const availableRing = pulseRings.children.find(r => !r.userData.active);
+    if (availableRing) {
+        availableRing.userData.active = true;
+        availableRing.userData.startTime = time;
+        availableRing.userData.color = color;
+        availableRing.material.color.setHex(color);
+        availableRing.scale.setScalar(1);
+        console.log('💫 Energy pulse triggered');
     }
 }

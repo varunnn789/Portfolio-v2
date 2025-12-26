@@ -24,6 +24,7 @@ import {
     collapseCore
 } from './cyberpunk.js';
 import { createParticles, animateParticles } from './particles.js';
+import { createStarfield, animateStarfield, createNebula, animateNebula } from './stars.js';
 import { AudioManager } from './audio.js';
 import { sections } from './data.js';
 
@@ -79,70 +80,93 @@ controls.target.set(0, 0, 0);
 // ============================================
 
 let cameraAnimating = false;
+let cameraStartPos = defaultCameraPos.clone();
 let cameraTargetPos = defaultCameraPos.clone();
+let cameraStartLookAt = defaultLookAt.clone();
 let cameraTargetLookAt = defaultLookAt.clone();
+let cameraAnimProgress = 0;
+const CAMERA_ANIM_DURATION = 1.2; // seconds
+let cameraAnimStartTime = 0;
+
+// Ease-in-out cubic for smooth camera movement
+function easeInOutCubic(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
 
 function animateCameraToOrb(orbWorldPos) {
     if (!orbWorldPos) return;
 
-    // Calculate camera position:
-    // Position camera so BOTH the clicked orb AND the core are visible
-    // Camera goes to the SAME SIDE as the orb, but further back
-    // This puts the orb in the foreground with the core visible behind/beside it
+    // Store starting positions
+    cameraStartPos = camera.position.clone();
+    cameraStartLookAt = controls.target.clone();
 
+    // Calculate camera position:
+    // Position camera to SEE the orb clearly with core in background
     const direction = orbWorldPos.clone().normalize();
 
-    // Camera position: on the SAME SIDE as the orb, but further out
-    // This creates a view where orb is prominent with core visible
-    // Add some offset so we see orb + core together
-    const sideOffset = direction.clone().multiplyScalar(16); // Same direction as orb
-    const upOffset = new THREE.Vector3(0, 4, 0); // Slight elevation
+    // Camera goes to the same side as orb but at an angle
+    // Further back and higher up for a cinematic view
+    const sideOffset = direction.clone().multiplyScalar(22);  // Further back
+    const upOffset = new THREE.Vector3(0, 8, 0);  // Higher angle
 
     cameraTargetPos = sideOffset.add(upOffset);
 
-    // Look at a point BETWEEN the orb and the core center
-    // This keeps both in frame
-    const midpoint = orbWorldPos.clone().multiplyScalar(0.6); // 60% towards the orb from center
-    cameraTargetLookAt = midpoint;
+    // Look at a point between the orb and center - shows context
+    const lookAtPoint = orbWorldPos.clone().multiplyScalar(0.7);
+    cameraTargetLookAt = lookAtPoint;
 
+    // Start animation
     cameraAnimating = true;
-    controls.enabled = false; // Disable controls during animation
+    cameraAnimStartTime = performance.now() / 1000;
+    controls.enabled = false;
 
-    console.log('📷 Camera focusing: orb in foreground, core visible');
+    console.log('📷 Camera easing to orb (cinematic)');
 }
 
 function animateCameraToDefault() {
+    cameraStartPos = camera.position.clone();
+    cameraStartLookAt = controls.target.clone();
     cameraTargetPos = defaultCameraPos.clone();
     cameraTargetLookAt = defaultLookAt.clone();
-    cameraAnimating = true;
 
-    // Re-enable controls after a delay
+    cameraAnimating = true;
+    cameraAnimStartTime = performance.now() / 1000;
+
+    // Re-enable controls after animation completes
     setTimeout(() => {
         controls.enabled = true;
-    }, 800);
+    }, CAMERA_ANIM_DURATION * 1000);
 
-    console.log('📷 Camera returning to default');
+    console.log('📷 Camera easing to default (cinematic)');
 }
 
 function updateCameraAnimation() {
     if (!cameraAnimating) return;
 
-    // Smooth camera position
-    camera.position.lerp(cameraTargetPos, 0.04);
+    const currentTime = performance.now() / 1000;
+    const elapsed = currentTime - cameraAnimStartTime;
+    const progress = Math.min(elapsed / CAMERA_ANIM_DURATION, 1);
 
-    // Smooth look-at
-    const currentLookAt = new THREE.Vector3();
-    camera.getWorldDirection(currentLookAt);
-    currentLookAt.multiplyScalar(10).add(camera.position);
-    currentLookAt.lerp(cameraTargetLookAt, 0.04);
-    camera.lookAt(cameraTargetLookAt);
+    // Apply easing
+    const easedProgress = easeInOutCubic(progress);
 
-    // Update controls target
-    controls.target.lerp(cameraTargetLookAt, 0.04);
+    // Interpolate position
+    camera.position.lerpVectors(cameraStartPos, cameraTargetPos, easedProgress);
+
+    // Interpolate look-at target
+    const currentLookAt = new THREE.Vector3().lerpVectors(
+        cameraStartLookAt,
+        cameraTargetLookAt,
+        easedProgress
+    );
+    camera.lookAt(currentLookAt);
+    controls.target.copy(currentLookAt);
 
     // Check if animation is done
-    if (camera.position.distanceTo(cameraTargetPos) < 0.1) {
+    if (progress >= 1) {
         cameraAnimating = false;
+        controls.enabled = true; // Re-enable rotation/zoom!
+        console.log('✅ Camera animation complete - controls enabled');
     }
 }
 
@@ -205,6 +229,20 @@ gridHelper.material.opacity = 0.15;
 gridHelper.material.transparent = true;
 gridHelper.position.y = -10;
 scene.add(gridHelper);
+
+// ============================================
+// NEBULA (furthest back)
+// ============================================
+
+const nebula = createNebula();
+scene.add(nebula);
+
+// ============================================
+// STARFIELD (behind everything)
+// ============================================
+
+const starfield = createStarfield(800);
+scene.add(starfield);
 
 // ============================================
 // CORE & PARTICLES
@@ -285,7 +323,7 @@ canvas.addEventListener('mousemove', (e) => {
 canvas.addEventListener('click', () => {
     if (hoveredOrb && hoveredOrb.userData.section) {
         // Expand core and focus camera on this orb
-        const orbWorldPos = expandToOrb(core, hoveredOrb);
+        const orbWorldPos = expandToOrb(core, hoveredOrb, clock.getElapsedTime());
         animateCameraToOrb(orbWorldPos);
 
         showSection(hoveredOrb.userData.section);
@@ -386,7 +424,7 @@ navButtons.forEach(btn => {
         const targetOrb = orbs.find(o => o.userData.section === sectionId);
 
         if (targetOrb) {
-            const orbWorldPos = expandToOrb(core, targetOrb);
+            const orbWorldPos = expandToOrb(core, targetOrb, clock.getElapsedTime());
             animateCameraToOrb(orbWorldPos);
         }
 
@@ -411,6 +449,8 @@ function animate() {
     updateRaycast();
     updateLabels();
 
+    animateNebula(nebula, time);
+    animateStarfield(starfield, time);
     animateCyberpunkCore(core, time);
 
     const corePos = { x: core.position.x, y: core.position.y, z: core.position.z };
