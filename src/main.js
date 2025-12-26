@@ -25,6 +25,7 @@ import {
 } from './cyberpunk.js';
 import { createParticles, animateParticles } from './particles.js';
 import { createStarfield, animateStarfield, createNebula, animateNebula } from './stars.js';
+import { createSun, animateSun } from './sun.js';
 import { AudioManager } from './audio.js';
 import { sections } from './data.js';
 
@@ -299,6 +300,13 @@ const particles = createParticles(100);
 scene.add(particles);
 
 // ============================================
+// REALISTIC SUN
+// ============================================
+
+const sun = createSun(1.8);  // Match core size
+scene.add(sun);
+
+// ============================================
 // ORB LABELS
 // ============================================
 
@@ -488,6 +496,7 @@ function animate() {
     animateNebula(nebula, time);
     animateStarfield(starfield, time);
     animateCyberpunkCore(core, time);
+    animateSun(sun, time);  // Animate sun shader
 
     const corePos = { x: core.position.x, y: core.position.y, z: core.position.z };
     animateParticles(particles, time, corePos);
