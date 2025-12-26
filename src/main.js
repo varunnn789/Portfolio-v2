@@ -269,11 +269,7 @@ scene.add(rimLight);
 // GROUND
 // ============================================
 
-const gridHelper = new THREE.GridHelper(50, 50, 0x222244, 0x111122);
-gridHelper.material.opacity = 0.15;
-gridHelper.material.transparent = true;
-gridHelper.position.y = -10;
-scene.add(gridHelper);
+// (Grid helper removed for cleaner space look)
 
 // ============================================
 // NEBULA (furthest back)

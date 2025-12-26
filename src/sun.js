@@ -312,69 +312,10 @@ export function createSun(radius = 1.8) {
         depthWrite: false
     });
 
+
     const coronaOuter = new THREE.Mesh(coronaOuterGeometry, coronaOuterMaterial);
     coronaOuter.name = 'coronaOuter';
     group.add(coronaOuter);
-
-    // ============================================
-    // SOLAR PROMINENCES (Curved arcs)
-    // ============================================
-
-    const prominences = new THREE.Group();
-    prominences.name = 'prominences';
-
-    // Create several prominence arcs at different positions
-    const prominenceCount = 4;
-
-    for (let i = 0; i < prominenceCount; i++) {
-        // Random position on sun surface
-        const theta = (i / prominenceCount) * Math.PI * 2 + Math.random() * 0.5;
-        const phi = Math.PI * 0.3 + Math.random() * 0.4;  // Near equator
-
-        // Create curved path for the prominence arc
-        const arcHeight = 0.3 + Math.random() * 0.4;  // How far it extends
-        const arcWidth = 0.2 + Math.random() * 0.3;   // Width of the arc
-
-        const curve = new THREE.CatmullRomCurve3([
-            // Start point on sun surface
-            new THREE.Vector3(
-                radius * Math.sin(phi) * Math.cos(theta),
-                radius * Math.sin(phi) * Math.sin(theta),
-                radius * Math.cos(phi)
-            ),
-            // Peak of arc (outward)
-            new THREE.Vector3(
-                (radius + arcHeight) * Math.sin(phi) * Math.cos(theta + arcWidth * 0.5),
-                (radius + arcHeight) * Math.sin(phi) * Math.sin(theta + arcWidth * 0.5),
-                (radius + arcHeight * 0.5) * Math.cos(phi)
-            ),
-            // End point on sun surface
-            new THREE.Vector3(
-                radius * Math.sin(phi) * Math.cos(theta + arcWidth),
-                radius * Math.sin(phi) * Math.sin(theta + arcWidth),
-                radius * Math.cos(phi)
-            )
-        ]);
-
-        // Create tube geometry along the curve
-        const tubeGeometry = new THREE.TubeGeometry(curve, 20, 0.03 + Math.random() * 0.02, 8, false);
-
-        // Glowing material
-        const tubeMaterial = new THREE.MeshBasicMaterial({
-            color: new THREE.Color(1.0, 0.4 + Math.random() * 0.2, 0.1),
-            transparent: true,
-            opacity: 0.6 + Math.random() * 0.3,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false
-        });
-
-        const prominence = new THREE.Mesh(tubeGeometry, tubeMaterial);
-        prominence.userData.baseOpacity = tubeMaterial.opacity;
-        prominence.userData.phase = Math.random() * Math.PI * 2;  // Random animation offset
-        prominences.add(prominence);
-    }
-
-    group.add(prominences);
 
     // ============================================
     // POINT LIGHT
@@ -389,11 +330,10 @@ export function createSun(radius = 1.8) {
         surface: surface,
         surfaceMaterial: surfaceMaterial,
         coronaInnerMaterial: coronaInnerMaterial,
-        coronaOuterMaterial: coronaOuterMaterial,
-        prominences: prominences
+        coronaOuterMaterial: coronaOuterMaterial
     };
 
-    console.log('☀️ Realistic sun created with prominences');
+    console.log('☀️ Realistic sun created');
     return group;
 }
 
@@ -408,19 +348,6 @@ export function animateSun(sun, time) {
     // Slow rotation of surface
     if (data.surface) {
         data.surface.rotation.y = time * 0.02;
-    }
-
-    // Rotate prominences with surface
-    if (data.prominences) {
-        data.prominences.rotation.y = time * 0.02;
-
-        // Animate each prominence's opacity
-        data.prominences.children.forEach(prominence => {
-            const phase = prominence.userData.phase || 0;
-            const baseOpacity = prominence.userData.baseOpacity || 0.7;
-            const flicker = 0.8 + Math.sin(time * 2 + phase) * 0.2;
-            prominence.material.opacity = baseOpacity * flicker;
-        });
     }
 
     // Update shader time uniform

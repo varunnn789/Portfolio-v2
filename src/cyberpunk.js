@@ -74,34 +74,7 @@ export function createCyberpunkCore() {
         targetRingSpeed: 1
     };
 
-    // ============================================
-    // INNER CORE - Smaller
-    // ============================================
-
-    const coreGeo = new THREE.IcosahedronGeometry(1.6, 2);
-    const coreMat = new THREE.MeshStandardMaterial({
-        color: 0xff6600,
-        emissive: 0xff6600,
-        emissiveIntensity: 0.6,
-        metalness: 0.7,
-        roughness: 0.2,
-        transparent: true,
-        opacity: 0.95
-    });
-    const core = new THREE.Mesh(coreGeo, coreMat);
-    core.name = 'innerCore';
-    group.add(core);
-
-    // Core glow
-    const glowGeo = new THREE.SphereGeometry(2.2, 32, 32);
-    const glowMat = new THREE.MeshBasicMaterial({
-        color: 0xff6600,
-        transparent: true,
-        opacity: 0.1
-    });
-    const glow = new THREE.Mesh(glowGeo, glowMat);
-    glow.name = 'coreGlow';
-    group.add(glow);
+    // (Inner core removed - sun shader now provides the visual center)
 
     // ============================================
     // ENERGY PULSE RINGS (for expansion effect)
@@ -133,60 +106,7 @@ export function createCyberpunkCore() {
 
     group.add(pulseRings);
 
-    // ============================================
-    // ONLY 2 ORBITAL RINGS
-    // ============================================
-
-    // Ring 1 - Horizontal
-    const ring1Geo = new THREE.TorusGeometry(3.5, 0.02, 8, 64);
-    const ring1Mat = new THREE.MeshBasicMaterial({
-        color: 0x00ffff,
-        transparent: true,
-        opacity: 0.3
-    });
-    const ring1 = new THREE.Mesh(ring1Geo, ring1Mat);
-    ring1.rotation.x = Math.PI / 2;
-    ring1.name = 'orbitalRing1';
-    group.add(ring1);
-
-    // Ring 2 - Tilted
-    const ring2Geo = new THREE.TorusGeometry(4.5, 0.018, 8, 64);
-    const ring2Mat = new THREE.MeshBasicMaterial({
-        color: 0xff00ff,
-        transparent: true,
-        opacity: 0.25
-    });
-    const ring2 = new THREE.Mesh(ring2Geo, ring2Mat);
-    ring2.rotation.x = Math.PI / 3;
-    ring2.rotation.z = Math.PI / 4;
-    ring2.name = 'orbitalRing2';
-    group.add(ring2);
-
-    // ============================================
-    // WIREFRAME SHELLS
-    // ============================================
-
-    const shell1Geo = new THREE.IcosahedronGeometry(outerRadius, 1);
-    const shell1Edges = new THREE.EdgesGeometry(shell1Geo);
-    const shell1Mat = new THREE.LineBasicMaterial({
-        color: 0x00aaaa,
-        transparent: true,
-        opacity: 0.25
-    });
-    const shell1 = new THREE.LineSegments(shell1Edges, shell1Mat);
-    shell1.name = 'shell1';
-    group.add(shell1);
-
-    const shell2Geo = new THREE.IcosahedronGeometry(outerRadius * 0.7, 1);
-    const shell2Edges = new THREE.EdgesGeometry(shell2Geo);
-    const shell2Mat = new THREE.LineBasicMaterial({
-        color: 0xaa00aa,
-        transparent: true,
-        opacity: 0.2
-    });
-    const shell2 = new THREE.LineSegments(shell2Edges, shell2Mat);
-    shell2.name = 'shell2';
-    group.add(shell2);
+    // (Orbital rings and wireframe shells removed for cleaner planet look)
 
     // ============================================
     // VERTEX ORBS - Distributed
@@ -202,41 +122,52 @@ export function createCyberpunkCore() {
         const orbGroup = new THREE.Group();
         orbGroup.name = `orb_${section}`;
 
-        // Planet sphere - LARGER for visibility
-        const orbGeo = new THREE.SphereGeometry(0.6, 16, 16);
+        // ==========================================
+        // PLANET BODY - Larger sphere
+        // ==========================================
+
+        const planetRadius = 0.8;
+        const orbGeo = new THREE.SphereGeometry(planetRadius, 32, 32);
         const orbMat = new THREE.MeshStandardMaterial({
             color: SECTION_COLORS[section],
             emissive: SECTION_COLORS[section],
-            emissiveIntensity: 1.2,  // Brighter glow
-            metalness: 0.3,
-            roughness: 0.3
+            emissiveIntensity: 0.4,
+            metalness: 0.2,
+            roughness: 0.6
         });
         const orb = new THREE.Mesh(orbGeo, orbMat);
         orb.name = 'sphere';
         orbGroup.add(orb);
 
-        // Ring - LARGER to match
-        const ringGeo = new THREE.TorusGeometry(0.9, 0.03, 8, 48);
-        const ringMat = new THREE.MeshBasicMaterial({
+        // ==========================================
+        // ATMOSPHERE GLOW - Fresnel-like effect
+        // ==========================================
+
+        const atmosGeo = new THREE.SphereGeometry(planetRadius * 1.15, 32, 32);
+        const atmosMat = new THREE.MeshBasicMaterial({
             color: SECTION_COLORS[section],
             transparent: true,
-            opacity: 0.7
+            opacity: 0.25,
+            side: THREE.BackSide
         });
-        const ring = new THREE.Mesh(ringGeo, ringMat);
-        ring.rotation.x = Math.PI / 2.5;
-        ring.name = 'ring';
-        orbGroup.add(ring);
+        const atmosphere = new THREE.Mesh(atmosGeo, atmosMat);
+        atmosphere.name = 'atmosphere';
+        orbGroup.add(atmosphere);
 
-        // Moon - slightly larger
-        const moonGeo = new THREE.SphereGeometry(0.1, 6, 6);
-        const moonMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-        const moon = new THREE.Mesh(moonGeo, moonMat);
-        moon.position.set(0.9, 0, 0);
-        moon.name = 'moon';
-        orbGroup.add(moon);
+        // Outer glow
+        const glowGeo = new THREE.SphereGeometry(planetRadius * 1.4, 16, 16);
+        const glowMat = new THREE.MeshBasicMaterial({
+            color: SECTION_COLORS[section],
+            transparent: true,
+            opacity: 0.1,
+            side: THREE.BackSide
+        });
+        const glow = new THREE.Mesh(glowGeo, glowMat);
+        glow.name = 'glow';
+        orbGroup.add(glow);
 
-        // Light - brighter
-        const light = new THREE.PointLight(SECTION_COLORS[section], 1.0, 8);
+        // Light
+        const light = new THREE.PointLight(SECTION_COLORS[section], 0.8, 6);
         orbGroup.add(light);
 
         orbGroup.position.copy(orbPositions[i]);
@@ -253,22 +184,7 @@ export function createCyberpunkCore() {
 
     group.add(vertexOrbs);
 
-    // ============================================
-    // CONNECTING LINES
-    // ============================================
-
-    const lineMat = new THREE.LineBasicMaterial({
-        color: 0x333355,
-        transparent: true,
-        opacity: 0.25
-    });
-
-    orbPositions.forEach(pos => {
-        const points = [new THREE.Vector3(0, 0, 0), pos];
-        const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
-        const line = new THREE.Line(lineGeo, lineMat);
-        group.add(line);
-    });
+    // (Connecting lines removed for cleaner look)
 
     // Core light
     const coreLight = new THREE.PointLight(0xff6600, 2.5, 20);
@@ -417,62 +333,23 @@ export function animateCyberpunkCore(core, time) {
     core.scale.setScalar(newScale);
 
     // ============================================
-    // Rotate orbital rings - with speed burst
-    // ============================================
-
-    // Smooth speed multiplier transition
-    const currentSpeed = core.userData.ringSpeedMultiplier || 1;
-    const targetSpeed = core.userData.targetRingSpeed || 1;
-    const newSpeed = currentSpeed + (targetSpeed - currentSpeed) * 0.03;
-    core.userData.ringSpeedMultiplier = newSpeed;
-
-    const ring1 = core.getObjectByName('orbitalRing1');
-    const ring2 = core.getObjectByName('orbitalRing2');
-
-    if (ring1) ring1.rotation.z = time * 0.1 * newSpeed;
-    if (ring2) ring2.rotation.z = -time * 0.08 * newSpeed;
-
-    // Rotate inner shell slowly
-    const shell2 = core.getObjectByName('shell2');
-    if (shell2) {
-        shell2.rotation.x = time * 0.015;
-        shell2.rotation.y = time * 0.012;
-    }
-
-    // ============================================
-    // Inner core pulse
-    // ============================================
-
-    const innerCore = core.getObjectByName('innerCore');
-    const coreGlow = core.getObjectByName('coreGlow');
-
-    if (innerCore) {
-        innerCore.rotation.x = time * 0.08;
-        innerCore.rotation.y = time * 0.1;
-        const pulse = 1 + Math.sin(time * 2) * 0.03;
-        innerCore.scale.setScalar(pulse);
-    }
-
-    if (coreGlow) {
-        coreGlow.scale.setScalar(1 + Math.sin(time * 1.5) * 0.08);
-        coreGlow.material.opacity = 0.08 + Math.sin(time * 2) * 0.03;
-    }
-
-    // ============================================
-    // Animate orbs (ring spin, moon orbit)
+    // Animate planets - slow rotation
     // ============================================
 
     const vertexOrbs = core.getObjectByName('vertexOrbs');
     if (vertexOrbs) {
         vertexOrbs.children.forEach((orbGroup, i) => {
-            const ring = orbGroup.getObjectByName('ring');
-            if (ring) ring.rotation.z = time * 0.4;
+            // Slow planet rotation
+            const sphere = orbGroup.getObjectByName('sphere');
+            if (sphere) {
+                sphere.rotation.y = time * (0.1 + i * 0.02);
+            }
 
-            const moon = orbGroup.getObjectByName('moon');
-            if (moon) {
-                const moonAngle = time * 1.5 + i * 1.2;
-                moon.position.x = Math.cos(moonAngle) * 0.55;
-                moon.position.z = Math.sin(moonAngle) * 0.55;
+            // Subtle atmosphere pulse
+            const atmosphere = orbGroup.getObjectByName('atmosphere');
+            if (atmosphere) {
+                const pulse = 1 + Math.sin(time * 1.5 + i) * 0.02;
+                atmosphere.scale.setScalar(pulse);
             }
         });
     }
