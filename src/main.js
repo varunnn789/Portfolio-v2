@@ -44,8 +44,8 @@ const camera = new THREE.PerspectiveCamera(
     200
 );
 
-// Default camera position
-const defaultCameraPos = new THREE.Vector3(0, 2, 18);
+// Default camera position (starting view)
+const defaultCameraPos = new THREE.Vector3(-0.317, 0.139, 11.766);
 const defaultLookAt = new THREE.Vector3(0, 0, 0);
 
 camera.position.copy(defaultCameraPos);
@@ -68,12 +68,20 @@ const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
 controls.enablePan = true;
-controls.panSpeed = 0.5;
+controls.panSpeed = 1.5;
 controls.enableZoom = true;
-controls.zoomSpeed = 0.8;
-controls.minDistance = 8;
-controls.maxDistance = 40;
+controls.zoomSpeed = 1.2;
+controls.minDistance = 2;
+controls.maxDistance = 100;
 controls.target.set(0, 0, 0);
+
+// Explicit mouse button config
+controls.mouseButtons = {
+    LEFT: THREE.MOUSE.ROTATE,
+    MIDDLE: THREE.MOUSE.PAN,
+    RIGHT: THREE.MOUSE.DOLLY
+};
+controls.screenSpacePanning = true;  // Pan parallel to screen
 
 // ============================================
 // CAMERA ANIMATION STATE
@@ -92,21 +100,30 @@ let cameraAnimStartTime = 0;
 function easeInOutCubic(t) {
     return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
-// CUSTOM CAMERA VIEWS for specific sections
-// Positions divided by 3 (to compensate for no core expansion)
+// CUSTOM CAMERA VIEWS for all sections
+// All positions are direct (no core expansion)
 const SECTION_CAMERAS = {
-    experience: {
-        position: new THREE.Vector3(10.035, -7.462, -1.904),
-        target: new THREE.Vector3(2.342, -1.68, -3.055)
-    },
     about: {
-        position: new THREE.Vector3(5.269, 9.817, 5.901),
-        target: new THREE.Vector3(3.250, 2.659, 0.970)
+        position: new THREE.Vector3(9.625, 8.19, 3.325),
+        target: new THREE.Vector3(3.925, 3.077, -1.106)
+    },
+    experience: {
+        position: new THREE.Vector3(10.207, -7.396, -3.623),
+        target: new THREE.Vector3(2.753, -1.393, -4.432)
+    },
+    projects: {
+        position: new THREE.Vector3(4.187, 1.733, 10.242),   // 12.562/3, 5.2/3, 30.726/3
+        target: new THREE.Vector3(3.103, 0.427, 0.985)       // 9.31/3, 1.282/3, 2.956/3
+    },
+    contact: {
+        position: new THREE.Vector3(-6.162, -5.383, 6.752),  // -18.487/3, -16.15/3, 20.255/3
+        target: new THREE.Vector3(-1.235, -2.171, 3.527),    // -3.706/3, -6.513/3, 10.58/3
+        panelSide: 'left'
     },
     skills: {
-        position: new THREE.Vector3(-7.715, 7.373, -6.582),  // -23.144/3, 22.12/3, -19.747/3
-        target: new THREE.Vector3(-0.946, 0.56, -0.867),     // -2.838/3, 1.68/3, -2.6/3
-        panelSide: 'left'  // Panel opens on LEFT for this section
+        position: new THREE.Vector3(-8.223, 6.514, -6.01),
+        target: new THREE.Vector3(1.019, 0.781, -3.457),
+        panelSide: 'left'
     }
 };
 

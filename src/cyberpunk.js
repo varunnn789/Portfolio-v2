@@ -349,16 +349,14 @@ export function expandToOrb(core, orb, time = performance.now() / 1000, skipExpa
         });
     }
 
-    // TRIGGER ENERGY PULSE (skip if not expanding)
-    if (!skipExpansion) {
-        triggerEnergyPulse(core, SECTION_COLORS[orb.userData.section] || 0x00ffff, time);
-    }
+    // TRIGGER ENERGY PULSE (always, even when not expanding)
+    triggerEnergyPulse(core, SECTION_COLORS[orb.userData.section] || 0x00ffff, time);
 
     // Get the orb's position in world space
     const worldPos = new THREE.Vector3();
     orb.getWorldPosition(worldPos);
 
-    console.log('🎯 Expanding to orb:', orb.userData.section, skipExpansion ? '(no scale)' : 'with spotlight + pulse');
+    console.log('🎯 Focusing orb:', orb.userData.section, skipExpansion ? '(custom camera)' : '(expand + spotlight)');
 
     return worldPos;
 }
