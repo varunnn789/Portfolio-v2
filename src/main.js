@@ -92,30 +92,47 @@ let cameraAnimStartTime = 0;
 function easeInOutCubic(t) {
     return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
+// EXPERIENCE SECTION: User's custom camera view
+// Position adjusted 3x closer since core no longer expands
+const EXPERIENCE_CAMERA = {
+    position: new THREE.Vector3(10.035, -7.462, -1.904),  // Original / 3
+    target: new THREE.Vector3(2.342, -1.68, -3.055)       // Original / 3
+};
 
-function animateCameraToOrb(orbWorldPos) {
+function animateCameraToOrb(orbWorldPos, sectionId = null) {
+    // For Experience: ignore orbWorldPos completely, use custom view
+    if (sectionId === 'experience') {
+        cameraStartPos = camera.position.clone();
+        cameraStartLookAt = controls.target.clone();
+        cameraTargetPos = EXPERIENCE_CAMERA.position.clone();
+        cameraTargetLookAt = EXPERIENCE_CAMERA.target.clone();
+
+        cameraAnimating = true;
+        cameraAnimStartTime = performance.now() / 1000;
+        controls.enabled = false;
+
+        console.log('📷 EXPERIENCE: Direct path');
+        console.log('  From:', cameraStartPos.x.toFixed(1), cameraStartPos.y.toFixed(1), cameraStartPos.z.toFixed(1));
+        console.log('  To:', cameraTargetPos.x.toFixed(1), cameraTargetPos.y.toFixed(1), cameraTargetPos.z.toFixed(1));
+        return;
+    }
+
+    // Other sections: require orbWorldPos
     if (!orbWorldPos) return;
 
-    // Store starting positions
     cameraStartPos = camera.position.clone();
     cameraStartLookAt = controls.target.clone();
 
-    // Calculate camera position:
-    // Position camera to SEE the orb clearly with core in background
+    // Calculate camera position based on orb
     const direction = orbWorldPos.clone().normalize();
-
-    // Camera goes to the same side as orb but at an angle
-    // Further back and higher up for a cinematic view
-    const sideOffset = direction.clone().multiplyScalar(22);  // Further back
-    const upOffset = new THREE.Vector3(0, 8, 0);  // Higher angle
+    const sideOffset = direction.clone().multiplyScalar(22);
+    const upOffset = new THREE.Vector3(0, 8, 0);
 
     cameraTargetPos = sideOffset.add(upOffset);
 
-    // Look at a point between the orb and center - shows context
     const lookAtPoint = orbWorldPos.clone().multiplyScalar(0.7);
     cameraTargetLookAt = lookAtPoint;
 
-    // Start animation
     cameraAnimating = true;
     cameraAnimStartTime = performance.now() / 1000;
     controls.enabled = false;
@@ -323,10 +340,12 @@ canvas.addEventListener('mousemove', (e) => {
 canvas.addEventListener('click', () => {
     if (hoveredOrb && hoveredOrb.userData.section) {
         // Expand core and focus camera on this orb
-        const orbWorldPos = expandToOrb(core, hoveredOrb, clock.getElapsedTime());
-        animateCameraToOrb(orbWorldPos);
+        const sectionId = hoveredOrb.userData.section;
+        const skipExpansion = (sectionId === 'experience');  // No core expansion for Experience
+        const orbWorldPos = expandToOrb(core, hoveredOrb, clock.getElapsedTime(), skipExpansion);
+        animateCameraToOrb(orbWorldPos, sectionId);  // Pass sectionId for custom views
 
-        showSection(hoveredOrb.userData.section);
+        showSection(sectionId);
         audio.playClick();
     }
 });
@@ -424,8 +443,9 @@ navButtons.forEach(btn => {
         const targetOrb = orbs.find(o => o.userData.section === sectionId);
 
         if (targetOrb) {
-            const orbWorldPos = expandToOrb(core, targetOrb, clock.getElapsedTime());
-            animateCameraToOrb(orbWorldPos);
+            const skipExpansion = (sectionId === 'experience');  // No core expansion for Experience
+            const orbWorldPos = expandToOrb(core, targetOrb, clock.getElapsedTime(), skipExpansion);
+            animateCameraToOrb(orbWorldPos, sectionId);  // Pass sectionId for custom views
         }
 
         showSection(sectionId);
@@ -444,8 +464,14 @@ function animate() {
 
     const time = clock.getElapsedTime();
 
-    controls.update();
+    // Camera animation takes priority over controls
     updateCameraAnimation();
+
+    // Only update OrbitControls when NOT animating camera
+    if (!cameraAnimating) {
+        controls.update();
+    }
+
     updateRaycast();
     updateLabels();
 
@@ -482,5 +508,40 @@ setTimeout(() => {
 }, 500);
 
 animate();
+
+// ============================================
+// DEV TOOL: Export Camera Position
+// ============================================
+// Press 'E' to export current camera settings
+
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'e' || e.key === 'E') {
+        const camData = {
+            position: {
+                x: parseFloat(camera.position.x.toFixed(3)),
+                y: parseFloat(camera.position.y.toFixed(3)),
+                z: parseFloat(camera.position.z.toFixed(3))
+            },
+            target: {
+                x: parseFloat(controls.target.x.toFixed(3)),
+                y: parseFloat(controls.target.y.toFixed(3)),
+                z: parseFloat(controls.target.z.toFixed(3))
+            }
+        };
+
+        console.log('📷 CAMERA EXPORT:');
+        console.log(JSON.stringify(camData, null, 2));
+
+        // Also copy to clipboard
+        const exportString = JSON.stringify(camData);
+        navigator.clipboard.writeText(exportString).then(() => {
+            console.log('✅ Copied to clipboard!');
+        }).catch(() => {
+            console.log('Copy the JSON above manually');
+        });
+    }
+});
+
+console.log('💡 DEV: Press "E" to export camera position');
 
 console.log('🔮 Spacey Portfolio - Core expands, camera focuses on clicked orb');

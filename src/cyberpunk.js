@@ -310,14 +310,16 @@ export function highlightOrb(orb, highlight = true) {
  * EXPAND the entire structure and focus on an orb
  * Returns the world position of the clicked orb for camera targeting
  * Also applies spotlight effect - dims other orbs, brightens focused one
+ * @param skipExpansion - If true, don't expand the core (useful for custom camera views)
  */
-export function expandToOrb(core, orb, time = performance.now() / 1000) {
+export function expandToOrb(core, orb, time = performance.now() / 1000, skipExpansion = false) {
     if (!core || !orb) return null;
 
     core.userData.isExpanded = true;
-    core.userData.targetScale = 3; // Expand 3x to fill screen
+    // Only expand if not skipped
+    core.userData.targetScale = skipExpansion ? 1 : 3;
     core.userData.focusedOrb = orb;
-    core.userData.targetRingSpeed = 5; // Speed burst!
+    core.userData.targetRingSpeed = skipExpansion ? 1 : 5; // No speed burst if skipping
 
     // SPOTLIGHT EFFECT: Dim all orbs except the focused one
     const vertexOrbs = core.getObjectByName('vertexOrbs');
@@ -347,14 +349,16 @@ export function expandToOrb(core, orb, time = performance.now() / 1000) {
         });
     }
 
-    // TRIGGER ENERGY PULSE
-    triggerEnergyPulse(core, SECTION_COLORS[orb.userData.section] || 0x00ffff, time);
+    // TRIGGER ENERGY PULSE (skip if not expanding)
+    if (!skipExpansion) {
+        triggerEnergyPulse(core, SECTION_COLORS[orb.userData.section] || 0x00ffff, time);
+    }
 
     // Get the orb's position in world space
     const worldPos = new THREE.Vector3();
     orb.getWorldPosition(worldPos);
 
-    console.log('🎯 Expanding to orb:', orb.userData.section, 'with spotlight + pulse');
+    console.log('🎯 Expanding to orb:', orb.userData.section, skipExpansion ? '(no scale)' : 'with spotlight + pulse');
 
     return worldPos;
 }
