@@ -408,51 +408,28 @@ function updateRaycast() {
 }
 
 // ============================================
-// PANEL CONTROL
+// SECTION CONTROL (Panel removed for overhaul)
 // ============================================
 
-const contentPanel = document.getElementById('content');
-const sectionTitle = document.getElementById('section-title');
-const sectionContent = document.getElementById('section-content');
-const closeBtn = document.getElementById('close-panel');
-
 let currentSection = null;
-let panelVisible = false;
 
 function showSection(sectionId) {
     if (!sections[sectionId]) return;
 
     currentSection = sectionId;
-    panelVisible = true;
-
     audio.playTransition();
 
-    if (sectionTitle) sectionTitle.textContent = sections[sectionId].title;
-    if (sectionContent) sectionContent.innerHTML = sections[sectionId].content;
-
-    // Check if this section needs panel on left
-    const customCamera = SECTION_CAMERAS[sectionId];
-    const panelSide = customCamera?.panelSide || 'right';
-
-    if (contentPanel) {
-        contentPanel.classList.remove('panel-left', 'panel-right');
-        contentPanel.classList.add(`panel-${panelSide}`);
-        contentPanel.classList.add('visible');
-    }
-
+    // Update nav button states
     const navButtons = document.querySelectorAll('.nav-btn');
     navButtons.forEach(btn => {
         btn.classList.toggle('active', btn.dataset.section === sectionId);
     });
 
-    console.log('📍 Showing:', sectionId, `(panel ${panelSide})`);
+    console.log('📍 Selected:', sectionId);
 }
 
-function hidePanel() {
-    panelVisible = false;
+function hideSection() {
     currentSection = null;
-
-    if (contentPanel) contentPanel.classList.remove('visible');
 
     // Collapse core and return camera
     collapseCore(core);
@@ -461,10 +438,8 @@ function hidePanel() {
     // Remove nav active states
     const navButtons = document.querySelectorAll('.nav-btn');
     navButtons.forEach(btn => btn.classList.remove('active'));
-}
 
-if (closeBtn) {
-    closeBtn.addEventListener('click', hidePanel);
+    console.log('📍 Section closed');
 }
 
 // Nav buttons also trigger expansion
