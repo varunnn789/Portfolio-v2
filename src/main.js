@@ -121,8 +121,8 @@ const SECTION_CAMERAS = {
         panelSide: 'left'
     },
     skills: {
-        position: new THREE.Vector3(-8.223, 6.514, -6.01),
-        target: new THREE.Vector3(1.019, 0.781, -3.457),
+        position: new THREE.Vector3(-8.251, 9.885, -2.724),
+        target: new THREE.Vector3(0.252, -0.224, -5.031),
         panelSide: 'left'
     }
 };
