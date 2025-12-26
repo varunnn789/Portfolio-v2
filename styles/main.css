@@ -252,7 +252,7 @@ body {
  */
 #info-panel {
   position: absolute;
-  right: var(--space-4);
+  /* Position controlled by .panel-left / .panel-right classes */
   top: 50%;
   transform: translateY(-50%);
   width: 350px;
@@ -262,7 +262,7 @@ body {
   border-radius: var(--border-radius);
   padding: var(--space-4);
   opacity: 0;
-  transition: opacity var(--transition-medium), transform var(--transition-medium);
+  transition: opacity var(--transition-medium), transform var(--transition-medium), left var(--transition-medium), right var(--transition-medium);
 }
 
 #info-panel.visible {
@@ -374,12 +374,27 @@ body {
   border-radius: 2px;
 }
 
-/* Panel slide-in animation */
-#info-panel {
+/* Panel slide-in animation - RIGHT (default) */
+#info-panel,
+#info-panel.panel-right {
+  right: var(--space-4);
+  left: auto;
   transform: translateY(-50%) translateX(20px);
 }
 
-#info-panel.visible {
+#info-panel.visible,
+#info-panel.panel-right.visible {
+  transform: translateY(-50%) translateX(0);
+}
+
+/* Panel slide-in animation - LEFT */
+#info-panel.panel-left {
+  left: var(--space-4);
+  right: auto;
+  transform: translateY(-50%) translateX(-20px);
+}
+
+#info-panel.panel-left.visible {
   transform: translateY(-50%) translateX(0);
 }
 

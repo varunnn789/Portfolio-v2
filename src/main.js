@@ -92,28 +92,38 @@ let cameraAnimStartTime = 0;
 function easeInOutCubic(t) {
     return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
-// EXPERIENCE SECTION: User's custom camera view
-// Position adjusted 3x closer since core no longer expands
-const EXPERIENCE_CAMERA = {
-    position: new THREE.Vector3(10.035, -7.462, -1.904),  // Original / 3
-    target: new THREE.Vector3(2.342, -1.68, -3.055)       // Original / 3
+// CUSTOM CAMERA VIEWS for specific sections
+// Positions divided by 3 (to compensate for no core expansion)
+const SECTION_CAMERAS = {
+    experience: {
+        position: new THREE.Vector3(10.035, -7.462, -1.904),
+        target: new THREE.Vector3(2.342, -1.68, -3.055)
+    },
+    about: {
+        position: new THREE.Vector3(5.269, 9.817, 5.901),
+        target: new THREE.Vector3(3.250, 2.659, 0.970)
+    },
+    skills: {
+        position: new THREE.Vector3(-7.715, 7.373, -6.582),  // -23.144/3, 22.12/3, -19.747/3
+        target: new THREE.Vector3(-0.946, 0.56, -0.867),     // -2.838/3, 1.68/3, -2.6/3
+        panelSide: 'left'  // Panel opens on LEFT for this section
+    }
 };
 
 function animateCameraToOrb(orbWorldPos, sectionId = null) {
-    // For Experience: ignore orbWorldPos completely, use custom view
-    if (sectionId === 'experience') {
+    // Check if this section has a custom camera view
+    const customCamera = SECTION_CAMERAS[sectionId];
+    if (customCamera) {
         cameraStartPos = camera.position.clone();
         cameraStartLookAt = controls.target.clone();
-        cameraTargetPos = EXPERIENCE_CAMERA.position.clone();
-        cameraTargetLookAt = EXPERIENCE_CAMERA.target.clone();
+        cameraTargetPos = customCamera.position.clone();
+        cameraTargetLookAt = customCamera.target.clone();
 
         cameraAnimating = true;
         cameraAnimStartTime = performance.now() / 1000;
         controls.enabled = false;
 
-        console.log('📷 EXPERIENCE: Direct path');
-        console.log('  From:', cameraStartPos.x.toFixed(1), cameraStartPos.y.toFixed(1), cameraStartPos.z.toFixed(1));
-        console.log('  To:', cameraTargetPos.x.toFixed(1), cameraTargetPos.y.toFixed(1), cameraTargetPos.z.toFixed(1));
+        console.log(`📷 ${sectionId.toUpperCase()}: Custom view`);
         return;
     }
 
@@ -341,7 +351,7 @@ canvas.addEventListener('click', () => {
     if (hoveredOrb && hoveredOrb.userData.section) {
         // Expand core and focus camera on this orb
         const sectionId = hoveredOrb.userData.section;
-        const skipExpansion = (sectionId === 'experience');  // No core expansion for Experience
+        const skipExpansion = !!SECTION_CAMERAS[sectionId];  // Skip expansion if has custom camera
         const orbWorldPos = expandToOrb(core, hoveredOrb, clock.getElapsedTime(), skipExpansion);
         animateCameraToOrb(orbWorldPos, sectionId);  // Pass sectionId for custom views
 
@@ -403,14 +413,22 @@ function showSection(sectionId) {
     if (sectionTitle) sectionTitle.textContent = sections[sectionId].title;
     if (sectionContent) sectionContent.innerHTML = sections[sectionId].content;
 
-    if (contentPanel) contentPanel.classList.add('visible');
+    // Check if this section needs panel on left
+    const customCamera = SECTION_CAMERAS[sectionId];
+    const panelSide = customCamera?.panelSide || 'right';
+
+    if (contentPanel) {
+        contentPanel.classList.remove('panel-left', 'panel-right');
+        contentPanel.classList.add(`panel-${panelSide}`);
+        contentPanel.classList.add('visible');
+    }
 
     const navButtons = document.querySelectorAll('.nav-btn');
     navButtons.forEach(btn => {
         btn.classList.toggle('active', btn.dataset.section === sectionId);
     });
 
-    console.log('📍 Showing:', sectionId);
+    console.log('📍 Showing:', sectionId, `(panel ${panelSide})`);
 }
 
 function hidePanel() {
@@ -443,7 +461,7 @@ navButtons.forEach(btn => {
         const targetOrb = orbs.find(o => o.userData.section === sectionId);
 
         if (targetOrb) {
-            const skipExpansion = (sectionId === 'experience');  // No core expansion for Experience
+            const skipExpansion = !!SECTION_CAMERAS[sectionId];  // Skip expansion if has custom camera
             const orbWorldPos = expandToOrb(core, targetOrb, clock.getElapsedTime(), skipExpansion);
             animateCameraToOrb(orbWorldPos, sectionId);  // Pass sectionId for custom views
         }
